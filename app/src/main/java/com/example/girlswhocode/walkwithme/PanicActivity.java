@@ -150,6 +150,7 @@ public class PanicActivity extends AppCompatActivity implements GoogleApiClient.
         System.out.println(mLatLng.toString());
         String address = getMyLocation(mLatLng);
         System.out.println(address);
+        System.out.println(address);
 
         String smsBody = "I'm in trouble. If I don't respond in 15 minutes, call the police. My current GPS coordinates are " +
                 mLatLng.latitude + ", " + mLatLng.longitude + ". My current location is " + address;
