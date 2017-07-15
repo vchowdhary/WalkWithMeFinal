@@ -30,26 +30,25 @@
             android:orientation="vertical">
 
             <EditText
-                android:id="@+id/startField"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="textPersonName"
-                android:text="Start" />
-
-            <EditText
                 android:id="@+id/endField"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:contentDescription="Your destination"
                 android:ems="10"
-                android:inputType="textPersonName"
-                android:text="End" />
+                android:inputType="text"
+                android:text="End"
+                android:textAlignment="textStart"
+                android:textStyle="bold"
+                android:visibility="visible" />
 
             <Button
                 android:id="@+id/doneButton"
+                style="@android:style/Widget.Material.Button.Colored"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Go" />
+                android:background="#91cc1f"
+                android:text="Go"
+                android:textColor="@android:color/black" />
 
             <fragment
                 android:id="@+id/map"

@@ -14,6 +14,7 @@ import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -60,7 +61,28 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 //switch to panic activity
                 Intent switchIntent = new Intent(MapActivity.this, PanicActivity.class).putExtra("latitude", latLng.latitude);
                 switchIntent.putExtra("longitude", latLng.longitude);
-                startActivity(switchIntent);
+
+                TextView endField = (TextView) findViewById(R.id.endField);
+                String destination = endField.getText().toString();
+                String[] parts1 = destination.split(",");
+                String input = "";
+                for(int i = 0; i < parts1.length; i++)
+                {
+                    String[] parts = parts1[i].split(" ");
+                    for(int j = 0; j < parts.length; j++)
+                    {
+                        input+=parts[j]+"+";
+                    }
+                    input+="%2C";
+                }
+
+                String[] waypoints = {"42.2839,-71.654"};
+                Toast.makeText(MapActivity.this, input, Toast.LENGTH_SHORT).show();
+                Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination="+input+"&travelmode=walking&waypoints=" + waypoints[0]);
+
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                mapIntent.setPackage("com.google.android.apps.maps");
+                startActivity(mapIntent);
             }
         });
     }
