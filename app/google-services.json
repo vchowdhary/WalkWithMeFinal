@@ -46,6 +46,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "694725927974-j0l0o2b7i5vd2tkr95uqaol0eipsd3ck.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.girlswhocode.walkwithme",
+            "certificate_hash": "b87ecad7fcbe824d4ba18108652c34033e6823ef"
+          }
+        },
+        {
           "client_id": "694725927974-4apm9mj7tnimqsqaan3vbjccf3jmmn8m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

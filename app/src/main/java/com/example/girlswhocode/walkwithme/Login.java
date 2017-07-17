@@ -1,5 +1,6 @@
 package com.example.girlswhocode.walkwithme;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -61,7 +62,6 @@ public class Login extends AppCompatActivity {
                 System.out.println("Email Address: " + emailAddress.getText());
                 System.out.println("Password: " + password.getText());
                 signIn();
-                switchToPanicActivity();
             }
         });
 
@@ -78,6 +78,11 @@ public class Login extends AppCompatActivity {
         System.out.println("Attempting sign in...");
         String email = emailAddress.getText().toString();
         String pass = password.getText().toString();
+        final ProgressDialog progressDialog = new ProgressDialog(Login.this,
+                R.style.AppTheme);
+        progressDialog.setIndeterminate(true);
+        progressDialog.setMessage("Authenticating...");
+        progressDialog.show();
         mAuth.signInWithEmailAndPassword(email, pass) .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
@@ -88,7 +93,10 @@ public class Login extends AppCompatActivity {
                 // signed in user can be handled in the listener.
                 if (!task.isSuccessful()) {
                     System.out.println( "signInWithEmail:failed" + task.getException());
+                    launchRegistrationActivity();
                 }
+                else
+                    switchToPanicActivity();
 
                 // ...
             }

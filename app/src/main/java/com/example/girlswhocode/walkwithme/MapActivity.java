@@ -78,7 +78,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                 String[] waypoints = {"42.2839,-71.654"};
                 Toast.makeText(MapActivity.this, input, Toast.LENGTH_SHORT).show();
-                Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination="+input+"&travelmode=walking&waypoints=" + waypoints[0]);
+                Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin="+ latLng.latitude +","+ latLng.longitude +"&destination="+input+"&travelmode=walking&waypoints=" + waypoints[0]);
 
                 Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                 mapIntent.setPackage("com.google.android.apps.maps");
