@@ -108,7 +108,7 @@ public class Registration extends AppCompatActivity {
                                     for (int i = 0; i < keys.length; i++) {
                                         users.child(user.getUid()).child(keys[i]).setValue(values[i]);
                                     }
-                                    launchPanicActivity();
+                                    launchLogin();
                                 }
 
                                 // ...
@@ -128,9 +128,9 @@ public class Registration extends AppCompatActivity {
     }
 
 
-    private void launchPanicActivity() {
-        Intent switchPanic = new Intent(Registration.this, PanicActivity.class);
-        startActivity(switchPanic);
+    private void launchLogin() {
+        Intent switchLogin = new Intent(Registration.this, Login.class);
+        startActivity(switchLogin);
     }
 
     @Override

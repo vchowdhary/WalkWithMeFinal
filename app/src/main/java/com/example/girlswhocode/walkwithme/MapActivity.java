@@ -30,6 +30,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import static android.R.attr.type;
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
@@ -83,6 +84,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                 mapIntent.setPackage("com.google.android.apps.maps");
                 startActivity(mapIntent);
+
+                Intent switchPanic = new Intent(MapActivity.this, PanicActivity.class);
+                startActivity(switchPanic);
             }
         });
     }
