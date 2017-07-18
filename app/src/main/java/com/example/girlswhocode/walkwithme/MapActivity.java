@@ -2,6 +2,8 @@ package com.example.girlswhocode.walkwithme;
 
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -30,6 +32,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.Map;
 
 import static android.R.attr.type;
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
@@ -76,13 +80,26 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     input+="%2C";
                 }
 
-                String[] waypoints = {"42.2839,-71.654"};
-                Toast.makeText(MapActivity.this, input, Toast.LENGTH_SHORT).show();
-                Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin="+ latLng.latitude +","+ latLng.longitude +"&destination="+input+"&travelmode=walking&waypoints=" + waypoints[0]);
+                final String[] waypoints = {"42.2839,-71.654", "42.285659, -71.653883"};
 
-                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-                mapIntent.setPackage("com.google.android.apps.maps");
-                startActivity(mapIntent);
+                AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+                builder.setTitle("Make your selection");
+                final String finalInput = input;
+                builder.setItems(waypoints, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int item) {
+                        // Do something with the selection
+                        Toast.makeText(MapActivity.this, finalInput, Toast.LENGTH_SHORT).show();
+                        Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin="+ latLng.latitude +","+ latLng.longitude +"&destination="+ finalInput +"&travelmode=walking&waypoints=" + waypoints[item]);
+
+                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                        mapIntent.setPackage("com.google.android.apps.maps");
+                        startActivity(mapIntent);
+                    }
+                });
+                AlertDialog alert = builder.create();
+                alert.show();
+
+
             }
         });
     }
