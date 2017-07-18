@@ -31,7 +31,7 @@ public class Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Obtain UI elements
+        // Obtain UI elementschowdhar
         loginButton = (Button) findViewById(R.id.loginButton);
         emailAddress = (EditText) findViewById(R.id.emailAddress);
         password = (EditText) findViewById(R.id.password);
@@ -96,7 +96,7 @@ public class Login extends AppCompatActivity {
                     launchRegistrationActivity();
                 }
                 else
-                    switchToPanicActivity();
+                    switchToMap();
 
                 // ...
             }
@@ -108,10 +108,10 @@ public class Login extends AppCompatActivity {
         startActivity(switchRegister);
     }
 
-    private void switchToPanicActivity()
+    private void switchToMap()
     {
-        Intent switchPanic = new Intent(Login.this, PanicActivity.class);
-        startActivity(switchPanic);
+        Intent switchMap = new Intent(Login.this, MapActivity.class);
+        startActivity(switchMap);
     }
 
     // Attach listener to FirebaseAuth instance
