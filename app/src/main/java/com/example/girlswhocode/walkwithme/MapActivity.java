@@ -10,6 +10,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -32,6 +33,14 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Map;
 
@@ -47,11 +56,18 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     GoogleMap mGoogleMap;
     SupportMapFragment mFragment;
     Marker currLocationMarker;
+    Marker newMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currUser = mAuth.getCurrentUser();
+
+        FirebaseDatabase db = FirebaseDatabase.getInstance();
+        addFriend(currUser, db, "Jane Doe");
 
         mFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map); //gets fragment of map
         mFragment.getMapAsync(this);
@@ -103,6 +119,38 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             }
         });
     }
+
+    private void addFriend(FirebaseUser currUser, FirebaseDatabase db, final String s) {
+        final DatabaseReference currUserNode = db.getReference("users").child(currUser.getUid());
+        Toast.makeText(MapActivity.this, "got reference to current user", Toast.LENGTH_SHORT).show();
+
+        Query query = db.getReference("users").orderByChild("username").equalTo(s);
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    // dataSnapshot is the "issue" node with all children with id 0
+                    for (DataSnapshot issue : dataSnapshot.getChildren()) {
+                        // do something with the individual "issues"
+                        String[] keys = {"email", "location", "password", "phone number", "username"};
+                        for(int i = 0; i < keys.length; i++)
+                        {
+                            currUserNode.child("friends").child(issue.getKey()).child(keys[i]).setValue(issue.child(keys[i]).getValue());
+                        }
+                        Toast.makeText(MapActivity.this, "Added user " + s + "to your friends", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                else
+                    Toast.makeText(MapActivity.this, s + "user does not exist", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+;    }
 
     @Override
     /**
@@ -235,32 +283,69 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
      * @param location - LatLng
      */
     @Override
-    public void onLocationChanged(Location location) {
+    public void onLocationChanged(final Location location) {
 
         //place marker at current position
         //mGoogleMap.clear();
+        FirebaseDatabase db = FirebaseDatabase.getInstance();
+        DatabaseReference users = db.getReference("users");
+
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currUser = mAuth.getCurrentUser();
+
+
         if (currLocationMarker != null) {
             currLocationMarker.remove();
         }
         latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        MarkerOptions markerOptions = new MarkerOptions();
+        users.child(currUser.getUid()).child("location").setValue(location.getLatitude() + ", " + location.getLongitude());
+
+        final MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(latLng);
         markerOptions.title("Current Position");
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
         currLocationMarker = mGoogleMap.addMarker(markerOptions);
 
-        Toast.makeText(this,"Location Changed",Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Location Changed", Toast.LENGTH_SHORT).show();
 
         //zoom to current position:
-        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,19));
+        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17));
 
-        //If you only need one location, unregister the listener
-        //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        DatabaseReference friends = db.getReference("users").child(currUser.getUid()).child("friends");
+        friends.addValueEventListener(new ValueEventListener() {
+            @Overrideva
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    // dataSnapshot is the "issue" node with all children with id 0
+                    for (DataSnapshot friend : dataSnapshot.getChildren()) {
+                        // do something with the individual "issues"
+                        MarkerOptions friendMarkerOptions = new MarkerOptions();
+                        String friendLocation = friend.child("location").getValue().toString();
+                        String[] parts = friendLocation.split(",");
+                        friendMarkerOptions.position(new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1])));
+                        friendMarkerOptions.title(friend.child("username").getValue().toString());
+                        friendMarkerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+                        if(newMarker != null)
+                            newMarker.remove();
+                        newMarker = mGoogleMap.addMarker(friendMarkerOptions);
 
+                        Toast.makeText(MapActivity.this, "Added marker options for your friend", Toast.LENGTH_SHORT).show();
+                    }
+                } else
+                    Toast.makeText(MapActivity.this, "user does not exist", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+
+            //If you only need one location, unregister the listener
+            //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+
+        });
     }
-
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
+        public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
 
