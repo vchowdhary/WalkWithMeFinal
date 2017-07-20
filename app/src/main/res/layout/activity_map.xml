@@ -64,6 +64,8 @@
                 style="@android:style/Widget.Material.Button.Colored"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
+                android:layout_marginStart="10dp"
                 android:background="#91cc1f"
                 android:text="Go"
                 android:textColor="@android:color/black" />
@@ -73,6 +75,7 @@
                 android:name="com.google.android.gms.maps.SupportMapFragment"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_margin="10dp"
                 tools:context="com.example.mapwithmarker.MapsMarkerActivity" />
         </LinearLayout>
 

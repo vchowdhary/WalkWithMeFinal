@@ -16,6 +16,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -45,6 +46,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.Map;
 
@@ -76,6 +78,24 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         mFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map); //gets fragment of map
         mFragment.getMapAsync(this);
+
+        String username = "Vanshika Chowdhary";
+        /*FirebaseMessaging.getInstance().subscribeToTopic("user_"+username);
+        Log.wtf("MADE IT", "Subscribed to topic");*/
+        MyFirebaseMessagingService service = new MyFirebaseMessagingService();
+        Log.wtf("MADE IT", "Created messaging service");
+        Toast.makeText(MapActivity.this, "Created messaging service", Toast.LENGTH_SHORT).show();
+        try {
+            service.sendNotificationToUser("Friend Request", "Vanshika Chowdhary", "Hi there");
+            Log.wtf("WTF I ACTUALLY DID IT", "Notification sent to the damn user fool");
+        }
+        catch(Exception e)
+        {
+            Log.wtf("HELP", e.getMessage());
+        }
+
+        MyFirebaseInstanceIDService secondservice = new MyFirebaseInstanceIDService();
+        secondservice.onRefreshToken();
 
         Button go = (Button) findViewById(R.id.doneButton);
         go.setOnClickListener(new View.OnClickListener() {
