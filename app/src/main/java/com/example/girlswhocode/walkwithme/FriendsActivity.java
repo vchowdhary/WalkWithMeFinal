@@ -32,6 +32,7 @@ public class FriendsActivity extends AppCompatActivity {
     private EditText friendName;
     private Button addFriend;
     private ArrayList<String> names = new ArrayList<String>();
+    private ArrayList<String> uids = new ArrayList<String>();
     User user;
 
     @Override
@@ -54,7 +55,6 @@ public class FriendsActivity extends AppCompatActivity {
         System.out.println("Accessed addFriend button");
         friendName.setText("");
 
-
         DatabaseReference currUserNode = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
         System.out.println("Got the reference to the node for the current user: " + currUserNode.toString());
         DatabaseReference friendsNode = currUserNode.child("friends");
@@ -70,6 +70,7 @@ public class FriendsActivity extends AppCompatActivity {
                         System.out.println("Got the friend " + friendUsername);
 
                        names.add(friendUsername);
+                        uids.add(ds.getKey());
 
                     }
                     ArrayAdapter<String> adapter = new ArrayAdapter<String>(FriendsActivity.this, android.R.layout.simple_list_item_1, names);
@@ -92,7 +93,9 @@ public class FriendsActivity extends AppCompatActivity {
             public void onClick(View view) {
                 //Friend newFriend = new Friend(FirebaseAuth.getInstance().getCurrentUser(), FirebaseDatabase.getInstance(), friendName.getText().toString());
 
-                Friend x = new Friend(FirebaseAuth.getInstance().getCurrentUser(), FirebaseDatabase.getInstance(), friendName.getText().toString());
+                //Friend x = new Friend(friendName.getText().toString());
+                //TODO: implement this:
+                addFriendToDB(friendName.getText().toString());
                 System.out.println("friendname:" + friendName.getText().toString());
                 names.add(friendName.getText().toString());
                 System.out.println(names);
@@ -103,6 +106,38 @@ public class FriendsActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private void addFriendToDB(final String s) {
+
+        final FirebaseDatabase db = FirebaseDatabase.getInstance();
+
+        System.out.println("Looking for: " + s);
+        Query ref = db.getReference("users").orderByChild("username").equalTo(s);
+        System.out.println("created query at: " + ref);
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                System.out.println("checking right now");
+                if (dataSnapshot.exists()) {
+                    for(DataSnapshot ds: dataSnapshot.getChildren())
+                    {
+                        System.out.println("data snapshot exists");
+                        // dataSnapshot is the "issue" node with all children with id 0
+                        System.out.println("issue: " + dataSnapshot);
+                        db.getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("friends").child(ds.getKey()).setValue(s);
+                        //query.removeEventListener(this);
+                    }
+                }
+                else
+                    System.out.println("does not exist");
+                //Toast.makeText(context, "user does not exist", Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     private void setRecylerViewItemTouchListener() {
@@ -119,6 +154,7 @@ public class FriendsActivity extends AppCompatActivity {
                 int position = viewHolder.getAdapterPosition();
                 mRecyclerView.getAdapter().notifyItemRemoved(position);
                 names.remove(position);
+                FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("friends").child(uids.get(position)).removeValue();
             }
 
         };
@@ -141,6 +177,7 @@ public class FriendsActivity extends AppCompatActivity {
             case R.id.map_action:
                 System.out.println("Switching to the map screen.");
                 Intent switchMap = new Intent(FriendsActivity.this, MapActivity.class);
+                switchMap.putExtra("uids", uids);
                 startActivity(switchMap);
                 return true;
 

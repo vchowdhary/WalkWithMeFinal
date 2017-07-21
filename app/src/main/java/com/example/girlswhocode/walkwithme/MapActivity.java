@@ -52,6 +52,7 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import static android.R.attr.key;
@@ -63,6 +64,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
 
+    ArrayList<String> uids = new ArrayList<String>();
     int counter;
     LatLng latLng;
     GoogleMap mGoogleMap;
@@ -231,11 +233,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onConnected(Bundle bundle) {
         Toast.makeText(this, "onConnected", Toast.LENGTH_SHORT).show();
-        System.out.println("Friends in the Map Activity:" + user.friends.toString());
-        for(Friend f: user.friends)
-        {
-            f.addToMap(mGoogleMap, MapActivity.this);
-        }
+        //Intent intent = this.getIntent();
+        Toast.makeText(this, "Getting friends", Toast.LENGTH_SHORT).show();
+
+        //Friend b = new Friend(FirebaseAuth.getInstance().getCurrentUser(), FirebaseDatabase.getInstance(), "Jane Doe");
+        //b.addToMap(mGoogleMap, MapActivity.this);
+
+           getFriends();
+           System.out.println("Friends: " + uids);
+
+           for(String uid: uids)
+           {
+               System.out.println("current friend: " + uid);
+               Friend x = new Friend(uid);
+               System.out.println(x.toString());
+               x.addToMap(mGoogleMap, MapActivity.this);
+           }
+
         Location mLastLocation = FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
         if (mLastLocation != null) {
@@ -265,6 +279,35 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             // permission has been granted, continue as usual
             FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         }
+    }
+
+    public void getFriends() {
+
+        DatabaseReference currUserFriends = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("friends");
+        currUserFriends.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(DataSnapshot ds: dataSnapshot.getChildren())
+                {
+                    //Toast.makeText(MapActivity.this, ds.getValue().toString(), Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(MapActivity.this, ds.getKey().toString(), Toast.LENGTH_SHORT).show();
+                    uids.add(ds.getKey());
+                }
+                System.out.println("Getting uids of friends: " + uids);
+                for(String uid: uids)
+                {
+                    System.out.println("current friend: " + uid);
+                    Friend x = new Friend(uid);
+                    System.out.println(x.toString());
+                    x.addToMap(mGoogleMap, MapActivity.this);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     /**

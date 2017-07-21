@@ -76,7 +76,7 @@ public class User implements GoogleApiClient.ConnectionCallbacks, GoogleApiClien
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         for(DataSnapshot ds: dataSnapshot.getChildren())
                         {
-                            friends.add(new Friend(currUser, FirebaseDatabase.getInstance(), ds.getValue().toString()));
+                            friends.add(new Friend(ds.getValue().toString()));
                             System.out.println("User's friends:"+friends);
                         }
 
@@ -271,7 +271,7 @@ public class User implements GoogleApiClient.ConnectionCallbacks, GoogleApiClien
                                     System.out.println("Friend found " + ds);
                                     String friendUsername = ds.child("username").getValue().toString();
                                     System.out.println("Found friend's username: " + friendUsername);
-                                    friends.add(new Friend(FirebaseAuth.getInstance().getCurrentUser(), FirebaseDatabase.getInstance(), friendUsername));
+                                    friends.add(new Friend(friendUsername));
                                     //System.out.println(names.toString());
                                     names.add(friendUsername);
                                     // Potentially create a friend object, if you want to display information about friend

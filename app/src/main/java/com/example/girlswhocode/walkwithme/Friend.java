@@ -34,31 +34,30 @@ public class Friend {
     MarkerOptions markerOptions = new MarkerOptions();
     boolean done = false;
 
-    public Friend(final FirebaseUser currUser, final FirebaseDatabase db, final String s) {
-        final DatabaseReference currUserNode = db.getReference("users").child(currUser.getUid());
+    public Friend(String s) {
+        uid = s;
+        /*final DatabaseReference currUserNode = db.getReference("users").child(currUser.getUid());
 
-        final Query query = db.getReference("users").orderByChild("username").equalTo(s);
-        System.out.println("created query");
-        query.addValueEventListener(new ValueEventListener() {
+        System.out.println("Looking for: " + s);
+        Query ref = db.getReference("users").equalTo(s);
+        System.out.println("created query at: " + ref);
+        ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                System.out.println("checking right now");
                 if (dataSnapshot.exists()) {
                     System.out.println("data snapshot exists");
                     // dataSnapshot is the "issue" node with all children with id 0
-                    for (DataSnapshot issue : dataSnapshot.getChildren()) {
-                        // do something with the individual "issues"
-                        System.out.println("issue: " + issue);
-                        db.getReference("users").child(currUser.getUid()).child("friends").child(issue.getKey()).setValue(s);
+                        System.out.println("issue: " + dataSnapshot);
+                        db.getReference("users").child(currUser.getUid()).child("friends").child(s).setValue(dataSnapshot.child("username").getValue().toString());
                         //query.removeEventListener(this);
-                        uid = issue.getKey();
+                        uid = s;
                         System.out.println("UID:"+uid);
-                        username = String.valueOf(issue.child("username").getValue());
-                        email = String.valueOf(issue.child("email").getValue());
-                        password = String.valueOf(issue.child("password").getValue());
-                        phoneNumber = String.valueOf(issue.child("phonenumber").getValue());
-                        location = String.valueOf(issue.child("location").getValue());
-
-                    }
+                        username = String.valueOf(dataSnapshot.child("username").getValue());
+                        email = String.valueOf(dataSnapshot.child("email").getValue());
+                        password = String.valueOf(dataSnapshot.child("password").getValue());
+                        phoneNumber = String.valueOf(dataSnapshot.child("phonenumber").getValue());
+                        location = String.valueOf(dataSnapshot.child("location").getValue());
                 }
                 else
                     System.out.println("does not exist");
@@ -69,7 +68,7 @@ public class Friend {
             public void onCancelled(DatabaseError databaseError) {
 
             }
-        });
+        });*/
     }
 
     public void addToMap(final GoogleMap mGoogleMap, final Context context)
@@ -85,7 +84,7 @@ public class Friend {
                 //Toast.makeText(context, position, Toast.LENGTH_SHORT).show();
                 String[] parts = position.split(",");
                 markerOptions.position(new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1])));
-                markerOptions.title(username);
+                markerOptions.title(ds.child("username").getValue().toString());
                 friendMarker = mGoogleMap.addMarker(markerOptions);
             }
 

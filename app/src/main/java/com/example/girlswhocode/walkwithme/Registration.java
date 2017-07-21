@@ -38,7 +38,7 @@ public class Registration extends AppCompatActivity {
 
         // Get UI elements
         Button cancelReg = (Button) findViewById(R.id.cancelRegistrationButton);
-        email = (EditText) findViewById(R.id.email);
+        email = (EditText) findViewById(R.id.emailAddress);
         password = (EditText) findViewById(R.id.password);
         username = (EditText) findViewById(R.id.emailAddress);
         phoneNumber = (EditText) findViewById(R.id.phoneNumber);
