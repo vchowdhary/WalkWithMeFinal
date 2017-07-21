@@ -51,7 +51,7 @@ public class Friend {
                         db.getReference("users").child(currUser.getUid()).child("friends").child(issue.getKey()).setValue(s);
                         //query.removeEventListener(this);
                         uid = issue.getKey();
-                        System.out.println(uid);
+                        System.out.println("UID:"+uid);
                         username = String.valueOf(issue.child("username").getValue());
                         email = String.valueOf(issue.child("email").getValue());
                         password = String.valueOf(issue.child("password").getValue());
@@ -77,9 +77,11 @@ public class Friend {
         FirebaseDatabase.getInstance().getReference("users").child(uid).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot ds) {
+                System.out.println("Datasnapshot:"+ds);
                 //Toast.makeText(context, ds.child("username").getValue() + " was changed", Toast.LENGTH_SHORT).show();
                 if (friendMarker != null) friendMarker.remove();
                 String position = ds.child("location").getValue().toString();
+                System.out.println("Pos:"+position);
                 //Toast.makeText(context, position, Toast.LENGTH_SHORT).show();
                 String[] parts = position.split(",");
                 markerOptions.position(new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1])));
@@ -92,5 +94,10 @@ public class Friend {
 
             }
         });
+    }
+
+    public String toString()
+    {
+        return "UID: " + uid + " / " + "Username: " + username;
     }
 }

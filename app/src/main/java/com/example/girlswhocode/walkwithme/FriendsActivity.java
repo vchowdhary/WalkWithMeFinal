@@ -45,7 +45,7 @@ public class FriendsActivity extends AppCompatActivity {
         user.setActivity(FriendsActivity.this);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        System.out.println("Created recycler view");
+        System.out.println("Created recycler view:"+mRecyclerView.toString());
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         System.out.println("Added linear layout manager to recycler view");
         friendName = (EditText) findViewById(R.id.nameToBeAdded);
@@ -54,10 +54,6 @@ public class FriendsActivity extends AppCompatActivity {
         System.out.println("Accessed addFriend button");
         friendName.setText("");
 
-        for(Friend f: user.friends)
-        {
-            names.add(f.username);
-        }
 
         DatabaseReference currUserNode = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
         System.out.println("Got the reference to the node for the current user: " + currUserNode.toString());
@@ -75,14 +71,13 @@ public class FriendsActivity extends AppCompatActivity {
 
                        names.add(friendUsername);
 
-
-                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(FriendsActivity.this, android.R.layout.simple_list_item_1, names);
-
-                        mAdapter = new RecyclerAdapter(names);
-                        mRecyclerView.setAdapter(mAdapter);
-                        setRecylerViewItemTouchListener();
-
                     }
+                    ArrayAdapter<String> adapter = new ArrayAdapter<String>(FriendsActivity.this, android.R.layout.simple_list_item_1, names);
+
+                    mAdapter = new RecyclerAdapter(names);
+                    mRecyclerView.setAdapter(mAdapter);
+                    setRecylerViewItemTouchListener();
+
                 }
 
                 @Override
@@ -100,7 +95,9 @@ public class FriendsActivity extends AppCompatActivity {
                 Friend x = new Friend(FirebaseAuth.getInstance().getCurrentUser(), FirebaseDatabase.getInstance(), friendName.getText().toString());
                 System.out.println("friendname:" + friendName.getText().toString());
                 names.add(friendName.getText().toString());
+                System.out.println(names);
                 int pos = names.indexOf(friendName.getText().toString());
+                System.out.println(pos);
                 mRecyclerView.getAdapter().notifyItemInserted(pos);
                 friendName.setText(" ");
             }

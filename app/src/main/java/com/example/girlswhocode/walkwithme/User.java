@@ -62,20 +62,24 @@ public class User implements GoogleApiClient.ConnectionCallbacks, GoogleApiClien
         email = currUser.getEmail();
         username = currUser.getDisplayName();
         uid = currUser.getUid();
+        friends = new ArrayList<Friend>();
 
-        FirebaseDatabase.getInstance().getReference("users").child(uid).addValueEventListener(new ValueEventListener() {
+        FirebaseDatabase.getInstance().getReference("users").child(currUser.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 password = dataSnapshot.child("password").getValue().toString();
                 phonenumber = dataSnapshot.child("phonenumber").getValue().toString();
                 location = dataSnapshot.child("location").getValue().toString();
-                FirebaseDatabase.getInstance().getReference("users").child(uid).child("friends").addValueEventListener(new ValueEventListener() {
+                System.out.println(FirebaseDatabase.getInstance().getReference("users").child(currUser.getUid()).child("friends"));
+                FirebaseDatabase.getInstance().getReference("users").child(currUser.getUid()).child("friends").addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         for(DataSnapshot ds: dataSnapshot.getChildren())
                         {
                             friends.add(new Friend(currUser, FirebaseDatabase.getInstance(), ds.getValue().toString()));
+                            System.out.println("User's friends:"+friends);
                         }
+
                     }
 
                     @Override

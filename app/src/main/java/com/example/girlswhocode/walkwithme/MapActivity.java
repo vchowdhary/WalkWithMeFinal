@@ -84,6 +84,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         user.setContext(MapActivity.this);
         user.setActivity(MapActivity.this);
 
+        System.out.println("Created user.");
+
         mFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map); //gets fragment of map
         mFragment.getMapAsync(this);
 
@@ -203,10 +205,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         FirebaseDatabase db = FirebaseDatabase.getInstance();
 
-        janeDoe = new Friend(currUser, db, "Jane Doe");
+        /*janeDoe = new Friend(currUser, db, "Jane Doe");
         bobJones = new Friend(currUser, db, "Bob Jones");
         user.friends.add(janeDoe);
-        user.friends.add(bobJones);
+        user.friends.add(bobJones);*/
 
     }
 
@@ -229,7 +231,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onConnected(Bundle bundle) {
         Toast.makeText(this, "onConnected", Toast.LENGTH_SHORT).show();
-
+        System.out.println("Friends in the Map Activity:" + user.friends.toString());
         for(Friend f: user.friends)
         {
             f.addToMap(mGoogleMap, MapActivity.this);
