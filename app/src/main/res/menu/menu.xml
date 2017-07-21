@@ -3,13 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <!-- Settings, should always be in the overflow -->
-    <item android:id="map_action"
+    <item android:id="@+id/map_action"
         android:title="Map"
         app:showAsAction="never"/>
-    <item android:id="panic_action"
+    <item android:id="@+id/panic_action"
         android:title="Panic"
         app:showAsAction="never"/>
-    <item android:id="friends_action"
+    <item android:id="@+id/friends_action"
         android:title="Friends"
         app:showAsAction="never"/>
 
