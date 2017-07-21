@@ -24,19 +24,34 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_android_map_api_key" />
 
+<<<<<<< Updated upstream
         <service
             android:name=".MyFirebaseInstanceIDService">
+=======
+        <activity android:name=".PanicActivity" />
+        <activity android:name=".MapActivity" />
+        <activity android:name=".Login">
             <intent-filter>
-                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".Registration" />
+
+        <service android:name=".MyFirebaseInstanceIDService">
+>>>>>>> Stashed changes
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
-        <service
-            android:name=".MyFirebaseMessagingService">
+        <service android:name=".MyFirebaseMessagingService">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
+<<<<<<< Updated upstream
         <activity android:name=".PanicActivity" />
         <activity android:name=".MapActivity" />
         <activity android:name=".Login">
@@ -48,6 +63,9 @@
         </activity>
         <activity android:name=".Registration"></activity>
 
+=======
+        <activity android:name=".FriendsActivity"></activity>
+>>>>>>> Stashed changes
     </application>
 
 </manifest>

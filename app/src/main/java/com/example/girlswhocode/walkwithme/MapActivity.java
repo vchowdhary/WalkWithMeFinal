@@ -16,7 +16,11 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -54,7 +58,7 @@ import static android.R.attr.key;
 import static android.R.attr.type;
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
-public class MapActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
     static MapActivity INSTANCE;
     LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
@@ -141,6 +145,42 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 alert.show();
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.map_action:
+                System.out.println("Switched to the map screen.");
+                System.out.println("Already at the map screen.");
+                return true;
+
+            case R.id.friends_action:
+                System.out.println("Switching to the friends activity.");
+                Intent switchFriends = new Intent(MapActivity.this, FriendsActivity.class);
+                startActivity(switchFriends);
+                return true;
+
+            case R.id.panic_action:
+                System.out.println("Switching to the panic activity...");
+                Intent switchPanic = new Intent(MapActivity.this, PanicActivity.class);
+                startActivity(switchPanic);
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 
     @Override
