@@ -72,20 +72,22 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     Friend janeDoe;
     Friend bobJones;
     Friend[] friends;
+    User user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        counter = 1;
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        user = new User(mAuth.getCurrentUser());
+        user.setContext(MapActivity.this);
+        user.setActivity(MapActivity.this);
 
         mFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map); //gets fragment of map
         mFragment.getMapAsync(this);
 
         String username = "Vanshika Chowdhary";
-        /*FirebaseMessaging.getInstance().subscribeToTopic("user_"+username);
-        Log.wtf("MADE IT", "Subscribed to topic");*/
         MyFirebaseMessagingService service = new MyFirebaseMessagingService();
         Log.wtf("MADE IT", "Created messaging service");
         Toast.makeText(MapActivity.this, "Created messaging service", Toast.LENGTH_SHORT).show();
@@ -108,8 +110,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 // TODO Auto-generated method stub
                //set up navigation here too
                 //switch to panic activity
-                Intent switchIntent = new Intent(MapActivity.this, PanicActivity.class).putExtra("latitude", latLng.latitude);
-                switchIntent.putExtra("longitude", latLng.longitude);
 
                 TextView endField = (TextView) findViewById(R.id.endField);
                 String destination = endField.getText().toString();
@@ -203,11 +203,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         FirebaseDatabase db = FirebaseDatabase.getInstance();
 
-        janeDoe = new Friend(mGoogleMap, MapActivity.this, currUser, db, "Jane Doe");
-        bobJones = new Friend(mGoogleMap, MapActivity.this, currUser, db, "Bob Jones");
-        friends = new Friend[2];
-        friends[0] = janeDoe;
-        friends[1] = bobJones;
+        janeDoe = new Friend(currUser, db, "Jane Doe");
+        bobJones = new Friend(currUser, db, "Bob Jones");
+        user.friends.add(janeDoe);
+        user.friends.add(bobJones);
 
     }
 
@@ -231,6 +230,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onConnected(Bundle bundle) {
         Toast.makeText(this, "onConnected", Toast.LENGTH_SHORT).show();
 
+        for(Friend f: user.friends)
+        {
+            f.addToMap(mGoogleMap, MapActivity.this);
+        }
         Location mLastLocation = FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
         if (mLastLocation != null) {

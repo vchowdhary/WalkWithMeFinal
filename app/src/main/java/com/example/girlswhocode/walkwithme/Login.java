@@ -78,8 +78,8 @@ public class Login extends AppCompatActivity {
 
     private void signIn() {
         System.out.println("Attempting sign in...");
-        String email = emailAddress.getText().toString();
-        String pass = password.getText().toString();
+        final String email = emailAddress.getText().toString();
+        final String pass = password.getText().toString();
         final ProgressDialog progressDialog = new ProgressDialog(Login.this,
                 R.style.AppTheme);
         progressDialog.setIndeterminate(true);
@@ -98,7 +98,10 @@ public class Login extends AppCompatActivity {
                     launchRegistrationActivity();
                 }
                 else
+                {
                     switchToMap();
+
+                }
 
                 // ...
             }

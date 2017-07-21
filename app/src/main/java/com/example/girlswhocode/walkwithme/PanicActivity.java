@@ -29,6 +29,8 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.FirebaseDatabase;
 
 import org.w3c.dom.Text;
 
@@ -38,21 +40,23 @@ import java.util.Locale;
 
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
-public class PanicActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class PanicActivity extends AppCompatActivity {
     LatLng mLatLng;
     Location mLocation;
     private GoogleApiClient googleApiClient;
     LocationRequest mLocationRequest;
+    User user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_panic);
-        googleApiClient = new GoogleApiClient.Builder(this, this, this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API).build();
-        googleApiClient.connect();
+
+        Intent i = getIntent();
+        user = new User(FirebaseAuth.getInstance().getCurrentUser());
+        user.setContext(PanicActivity.this);
+        user.setActivity(PanicActivity.this);
+        user.startLocation();
 
         TextView call911 = (TextView) findViewById(R.id.call911Button);
         call911.setOnClickListener(new View.OnClickListener() {
@@ -146,24 +150,18 @@ public class PanicActivity extends AppCompatActivity implements GoogleApiClient.
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        Location loc = FusedLocationApi.getLastLocation(googleApiClient);
-        mLatLng = new LatLng(loc.getLatitude(), loc.getLongitude());
-        if(mLatLng == null) mLatLng = new LatLng(-71, 42.3);
-        Toast.makeText(PanicActivity.this, mLatLng.toString(), Toast.LENGTH_SHORT).show();
-        System.out.println(mLatLng.toString());
-        String address = getMyLocation(mLatLng);
+        String address = getMyLocation(user.getLatLng());
         System.out.println(address);
         System.out.println(address);
 
         String smsBody = "I'm in trouble. If I don't respond in 15 minutes, call the police. My current GPS coordinates are " +
-                mLatLng.latitude + ", " + mLatLng.longitude + ". My current location is " + address;
+                user.getLatLng().latitude + ", " + user.getLatLng().longitude + ". My current location is " + address;
         //smsBody += address;
 
         smsIntent.putExtra("sms_body", smsBody);
 
         // Shoot!
-        if(!address.equals(""))
-        {
+        if (!address.equals("")) {
             startActivity(smsIntent);
             address = "";
         }
@@ -177,7 +175,7 @@ public class PanicActivity extends AppCompatActivity implements GoogleApiClient.
         try {
 
             //Place your latitude and longitude
-            List<Address> addresses = reversegeocode.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            List<Address> addresses = reversegeocode.getFromLocation(user.getLatLng().latitude, user.getLatLng().longitude, 1);
 
             if (addresses != null) {
 
@@ -202,10 +200,11 @@ public class PanicActivity extends AppCompatActivity implements GoogleApiClient.
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         Toast.makeText(this, "onRequestPermissionsResult", Toast.LENGTH_SHORT).show();
         switch (requestCode) {
-            case 10:
+            case 20:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // All good!
-                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    Intent call911Intent = new Intent(Intent.ACTION_CALL);
+                    call911Intent.setData(Uri.parse("tel:911"));
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
                         // TODO: Consider calling
                         //    ActivityCompat#requestPermissions
                         // here to request the missing permissions, and then overriding
@@ -215,17 +214,6 @@ public class PanicActivity extends AppCompatActivity implements GoogleApiClient.
                         // for ActivityCompat#requestPermissions for more details.
                         return;
                     }
-                    Toast.makeText(this, "requesting location updates from within onReqPermResults", Toast.LENGTH_SHORT).show();
-                    FusedLocationApi.requestLocationUpdates(googleApiClient, mLocationRequest, this);
-                } else {
-                    Toast.makeText(this, "Need your location!", Toast.LENGTH_SHORT).show();
-                }
-                break;
-            case 20:
-                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                {
-                    Intent call911Intent = new Intent(Intent.ACTION_CALL);
-                    call911Intent.setData(Uri.parse("tel:911"));
                     startActivity(call911Intent);
                 }
                 break;
@@ -240,73 +228,6 @@ public class PanicActivity extends AppCompatActivity implements GoogleApiClient.
                 }
                 break;
 
-        }
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        Toast.makeText(this, "onConnected", Toast.LENGTH_SHORT).show();
-
-        mLocation = FusedLocationApi.getLastLocation(googleApiClient);
-
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(50); //5 seconds; function takes millisecond parameter
-        mLocationRequest.setFastestInterval(30); //3 seconds; function takes millisecond parameter
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        //mLocationRequest.setSmallestDisplacement(0.1F); //1/10 meter
-
-        Toast.makeText(this, "checking permission in on connected", Toast.LENGTH_SHORT).show();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Check Permissions Now
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    10);
-
-        } else {
-            // permission has been granted, continue as usual
-            Toast.makeText(this, "permission granted in on connected", Toast.LENGTH_SHORT).show();
-            FusedLocationApi.requestLocationUpdates(googleApiClient, mLocationRequest, this);
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        Toast.makeText(this, "onConnectionSuspended", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Toast.makeText(this, "onConnectionFailed", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        System.out.println("Location changed!");
-        Toast.makeText(this,"Location Changed",Toast.LENGTH_SHORT).show();
-        mLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-    }
-
-    public void startUpdates() {
-        if(FusedLocationApi != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    FusedLocationApi.requestLocationUpdates(googleApiClient, mLocationRequest, this);
-                } else if ((ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
-                    FusedLocationApi.requestLocationUpdates(googleApiClient, mLocationRequest, this);
-                }
-            }
-        }
-    }
-    public void stopUpdates() {
-        if(FusedLocationApi != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-
-                    FusedLocationApi.removeLocationUpdates(googleApiClient, this);
-                }
-            }
         }
     }
 

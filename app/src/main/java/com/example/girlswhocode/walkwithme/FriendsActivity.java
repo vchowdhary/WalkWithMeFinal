@@ -32,11 +32,17 @@ public class FriendsActivity extends AppCompatActivity {
     private EditText friendName;
     private Button addFriend;
     private ArrayList<String> names = new ArrayList<String>();
+    User user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_friends);
+
+        Intent i = getIntent();
+        user = new User(FirebaseAuth.getInstance().getCurrentUser());
+        user.setContext(FriendsActivity.this);
+        user.setActivity(FriendsActivity.this);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         System.out.println("Created recycler view");
@@ -46,17 +52,14 @@ public class FriendsActivity extends AppCompatActivity {
         System.out.println("Accessed friendName editText");
         addFriend = (Button) findViewById(R.id.addFriendButton);
         System.out.println("Accessed addFriend button");
-        friendName.setText(" ");
+        friendName.setText("");
 
-        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        System.out.println("Got the instance for FirebaseAuth");
-        final FirebaseDatabase db = FirebaseDatabase.getInstance();
-        System.out.println("Got the database");
-        final DatabaseReference ref = db.getReference();
-        System.out.println("Got the reference to the database");
-        FirebaseUser currUser = mAuth.getCurrentUser();
-        System.out.println("Got the current user");
-        DatabaseReference currUserNode = db.getReference("users").child(currUser.getUid());
+        for(Friend f: user.friends)
+        {
+            names.add(f.username);
+        }
+
+        DatabaseReference currUserNode = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
         System.out.println("Got the reference to the node for the current user: " + currUserNode.toString());
         DatabaseReference friendsNode = currUserNode.child("friends");
         System.out.println("Got a reference to the current user's friends: " + friendsNode.toString());
@@ -67,44 +70,18 @@ public class FriendsActivity extends AppCompatActivity {
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     for (DataSnapshot ds : dataSnapshot.getChildren()) {
                         System.out.println("Looking at snapshots");
-                        String friendUserID = ds.getKey().toString();
-                        System.out.println("Got the friend's user ID: " + friendUserID);
+                        final String friendUsername = ds.getValue().toString();
+                        System.out.println("Got the friend " + friendUsername);
 
-                        DatabaseReference users = ref.child("users");
-                        System.out.println("Got the reference to the users node in the database");
-                        Query usernameQuery = users.orderByKey().equalTo(friendUserID);
-                        usernameQuery.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                System.out.println("Added listener for single value event");
-                                for (DataSnapshot ds : dataSnapshot.getChildren())
-                                {
-                                    if (ds.exists()) // checks if there is a friend
-                                    {
-                                        System.out.println("Friend found " + ds);
-                                        String friendUsername = ds.child("username").getValue().toString();
-                                        System.out.println("Found friend's username: " + friendUsername);
-                                        names.add(friendUsername);
-                                        System.out.println(names.toString());
+                       names.add(friendUsername);
 
-                                        // Potentially create a friend object, if you want to display information about friend
-                                    }
-                                }
 
-                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(FriendsActivity.this, android.R.layout.simple_list_item_1, names);
+                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(FriendsActivity.this, android.R.layout.simple_list_item_1, names);
 
-                                mAdapter = new RecyclerAdapter(names);
-                                mRecyclerView.setAdapter(mAdapter);
-                                setRecylerViewItemTouchListener();
+                        mAdapter = new RecyclerAdapter(names);
+                        mRecyclerView.setAdapter(mAdapter);
+                        setRecylerViewItemTouchListener();
 
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                                System.out.println("Something went wrong: " + databaseError);
-
-                            }
-                        });
                     }
                 }
 
@@ -114,9 +91,14 @@ public class FriendsActivity extends AppCompatActivity {
                 }
             });
 
+
         addFriend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //Friend newFriend = new Friend(FirebaseAuth.getInstance().getCurrentUser(), FirebaseDatabase.getInstance(), friendName.getText().toString());
+
+                Friend x = new Friend(FirebaseAuth.getInstance().getCurrentUser(), FirebaseDatabase.getInstance(), friendName.getText().toString());
+                System.out.println("friendname:" + friendName.getText().toString());
                 names.add(friendName.getText().toString());
                 int pos = names.indexOf(friendName.getText().toString());
                 mRecyclerView.getAdapter().notifyItemInserted(pos);
