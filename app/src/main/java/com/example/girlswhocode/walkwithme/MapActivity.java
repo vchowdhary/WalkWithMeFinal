@@ -92,7 +92,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 // Extract data included in the Intent
                 String from = intent.getStringExtra("from");
                 String body = intent.getStringExtra("body");
-                alert(from, body);
+                String title = intent.getStringExtra("title");
+                alert(from, body, title);
                 //alert data here
             }
         };
@@ -167,25 +168,35 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
 
-    private void alert(String from, String body) {
+    private void alert(String from, String body, final String title) {
+        Toast.makeText(MapActivity.this, title, Toast.LENGTH_SHORT).show();
         AlertDialog.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
         } else {
             builder = new AlertDialog.Builder(this);
         }
-        builder.setTitle("Friend Request from " + from)
+        builder.setTitle(title)
                 .setMessage(body)
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         // continue with delete
-                        service.sendNotificationToUser("Message accepted", "Vanshika Chowdhary", "The user clicked yes");
+                        if(title.contains("Friend Request"))
+                        {
+                            System.out.println("Accepted friend request");
+                            service.sendNotificationToUser("Request accepted", "Vanshika Chowdhary", "The user clicked yes");
+                        }
+                        else if(title.contains("Request")) dialog.dismiss();
+                            //TODO: implement this and move all this to the friendsctivity, requires two emulators working
+                        // addFriend();
                     }
                 })
                 .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         // do nothing
-                        service.sendNotificationToUser("Message denied", "Vanshika Chowdhary", "The user clicked no");
+                        if(title.contains("Friend Request"))
+                            service.sendNotificationToUser("Request denied", "Vanshika Chowdhary", "The user clicked no");
+                        else if(title.contains("Request")) dialog.dismiss();
                     }
                 })
                 .setIcon(android.R.drawable.ic_dialog_alert)

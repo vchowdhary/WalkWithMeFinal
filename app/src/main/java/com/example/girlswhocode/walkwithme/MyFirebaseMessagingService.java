@@ -60,6 +60,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService
         // add data
         intent.putExtra("from", remoteMessage.getFrom() );
         intent.putExtra("body", remoteMessage.getData().get("body").toString());
+        intent.putExtra("title", remoteMessage.getData().get("title").toString());
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
