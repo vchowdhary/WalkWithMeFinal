@@ -14,6 +14,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -113,7 +114,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         Log.wtf("MADE IT", "Created messaging service");
         Toast.makeText(MapActivity.this, "Created messaging service", Toast.LENGTH_SHORT).show();
         try {
-            service.sendNotificationToUser("Friend Request", "Vanshika Chowdhary", "Hi there");
+            service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there");
             Log.wtf("WTF I ACTUALLY DID IT", "Notification sent to the damn user fool");
         }
         catch(Exception e)
@@ -152,6 +153,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 builder.setTitle("Make your selection");
                 final String finalInput = input;
                 builder.setItems(waypoints, new DialogInterface.OnClickListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.DONUT)
                     public void onClick(DialogInterface dialog, int item) {
                         // Do something with the selection
                         Toast.makeText(MapActivity.this, finalInput, Toast.LENGTH_SHORT).show();
