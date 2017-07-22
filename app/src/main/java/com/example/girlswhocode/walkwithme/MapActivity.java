@@ -3,9 +3,11 @@ package com.example.girlswhocode.walkwithme;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
@@ -16,6 +18,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -75,11 +78,24 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     Friend bobJones;
     Friend[] friends;
     User user;
+    MyFirebaseMessagingService service = new MyFirebaseMessagingService();
+    private BroadcastReceiver mMessageReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+
+         mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                // Extract data included in the Intent
+                String from = intent.getStringExtra("from");
+                String body = intent.getStringExtra("body");
+                alert(from, body);
+                //alert data here
+            }
+        };
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         user = new User(mAuth.getCurrentUser());
@@ -92,7 +108,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         mFragment.getMapAsync(this);
 
         String username = "Vanshika Chowdhary";
-        MyFirebaseMessagingService service = new MyFirebaseMessagingService();
+
         Log.wtf("MADE IT", "Created messaging service");
         Toast.makeText(MapActivity.this, "Created messaging service", Toast.LENGTH_SHORT).show();
         try {
@@ -149,6 +165,31 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 alert.show();
             }
         });
+    }
+
+    private void alert(String from, String body) {
+        AlertDialog.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+        } else {
+            builder = new AlertDialog.Builder(this);
+        }
+        builder.setTitle("Friend Request from " + from)
+                .setMessage(body)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // continue with delete
+                        service.sendNotificationToUser("Message accepted", "Vanshika Chowdhary", "The user clicked yes");
+                    }
+                })
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
+                        service.sendNotificationToUser("Message denied", "Vanshika Chowdhary", "The user clicked no");
+                    }
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
     }
 
     @Override
@@ -413,6 +454,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public LatLng getData()
     {
         return latLng;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        LocalBroadcastManager.getInstance(MapActivity.this).registerReceiver(mMessageReceiver,
+                new IntentFilter("myFunction"));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        LocalBroadcastManager.getInstance(MapActivity.this).unregisterReceiver(mMessageReceiver);
     }
 }
 

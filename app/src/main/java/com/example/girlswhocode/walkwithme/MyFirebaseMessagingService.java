@@ -9,8 +9,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Looper;
 import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
@@ -48,29 +50,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService
         // message, here is where that should be initiated.
        super.onMessageReceived(remoteMessage);
         Log.wtf(TAG, "This is your message: " + remoteMessage.getData().get("body").toString());
+        createAlert(remoteMessage);
 
         //Toast.makeText(this, "Received message", Toast.LENGTH_SHORT).show();
     }
 
-    private void sendNotification(String messageBody) {
-        Intent intent = new Intent(this, MapActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                PendingIntent.FLAG_ONE_SHOT);
-
-        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.powered_by_google_dark)
-                .setContentTitle("FCM Message")
-                .setContentText(messageBody)
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent);
-
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+    private void createAlert(RemoteMessage remoteMessage) {
+        Intent intent = new Intent("myFunction");
+        // add data
+        intent.putExtra("from", remoteMessage.getFrom() );
+        intent.putExtra("body", remoteMessage.getData().get("body").toString());
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     public static void sendNotificationToUser(final String titleText, String user, final String message) {
