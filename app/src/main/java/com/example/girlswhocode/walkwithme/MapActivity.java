@@ -187,7 +187,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 {
 
                                     System.out.println("Accepted friend request");
-                                    service.sendNotificationToUser("Request accepted", from, from +" clicked yes", dataSnapshot.getValue().toString());
+                                    service.sendNotificationToUser("Request accepted", from, dataSnapshot.getValue().toString() +" clicked yes", dataSnapshot.getValue().toString());
                                 }
                                 else if(title.contains("Request")) dialog.dismiss();
                                 //TODO: implement this and move all this to the friendsctivity, requires two emulators working
