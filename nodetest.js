@@ -31,6 +31,7 @@ function listenForNotificationRequests() {
       request.username, 
       request.message,
       request.titleText,
+	  request.fromUser,
       function() {
         requestSnapshot.ref.remove();
       }) 
@@ -39,11 +40,12 @@ function listenForNotificationRequests() {
   });
 };
 
-function sendNotificationToUser(username, message, titleText, onSuccess) {
+function sendNotificationToUser(username, message, titleText, fromU, onSuccess) {
   var payload = {
     data: {
       title: "Walk With Me: " + titleText,
-      body: message
+      body: message,
+	  fromUser: fromU
     }
   };
 
