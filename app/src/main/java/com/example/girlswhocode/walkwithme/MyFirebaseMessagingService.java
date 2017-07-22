@@ -58,13 +58,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService
     private void createAlert(RemoteMessage remoteMessage) {
         Intent intent = new Intent("myFunction");
         // add data
-        intent.putExtra("from", remoteMessage.getFrom() );
+        intent.putExtra("from", remoteMessage.getData().get("fromUser").toString() );
         intent.putExtra("body", remoteMessage.getData().get("body").toString());
         intent.putExtra("title", remoteMessage.getData().get("title").toString());
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-    public static void sendNotificationToUser(final String titleText, String user, final String message) {
+    public static void sendNotificationToUser(final String titleText, String user, final String message, final String s) {
         final FirebaseDatabase db = FirebaseDatabase.getInstance();
         DatabaseReference ref = db.getReference();
         final DatabaseReference notifications = ref.child("notificationRequests");
@@ -88,6 +88,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService
                                 notification.put("username", uid);
                                 notification.put("message", message);
                                 notification.put("titleText", titleText);
+                                notification.put("fromUser", s);
 
                                 notifications.push().setValue(notification);
                             }

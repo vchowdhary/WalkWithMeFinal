@@ -13,11 +13,8 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
@@ -27,7 +24,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,25 +38,18 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.ArrayList;
-import java.util.Map;
 
-import static android.R.attr.key;
-import static android.R.attr.type;
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
@@ -100,6 +89,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         };
 
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        Toast.makeText(MapActivity.this, mAuth.getCurrentUser().getUid().toString(), Toast.LENGTH_SHORT).show();
         user = new User(mAuth.getCurrentUser());
         user.setContext(MapActivity.this);
         user.setActivity(MapActivity.this);
@@ -109,18 +99,24 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         mFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map); //gets fragment of map
         mFragment.getMapAsync(this);
 
-        String username = "Vanshika Chowdhary";
+        final String[] username = {"Vanshika Chowdhary"};
 
         Log.wtf("MADE IT", "Created messaging service");
         Toast.makeText(MapActivity.this, "Created messaging service", Toast.LENGTH_SHORT).show();
-        try {
-            service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there");
+        DatabaseReference user = FirebaseDatabase.getInstance().getReference("users").child(mAuth.getCurrentUser().getUid().toString()).child("username");
+        user.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                username[0] = dataSnapshot.getValue().toString();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+            service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there", username[0]);
             Log.wtf("WTF I ACTUALLY DID IT", "Notification sent to the damn user fool");
-        }
-        catch(Exception e)
-        {
-            Log.wtf("HELP", e.getMessage());
-        }
 
         MyFirebaseInstanceIDService secondservice = new MyFirebaseInstanceIDService();
         secondservice.onRefreshToken();
@@ -170,7 +166,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
 
-    private void alert(String from, String body, final String title) {
+    private void alert(final String from, String body, final String title) {
         Toast.makeText(MapActivity.this, title, Toast.LENGTH_SHORT).show();
         AlertDialog.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -181,24 +177,48 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         builder.setTitle(title)
                 .setMessage(body)
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(final DialogInterface dialog, int which) {
                         // continue with delete
-                        if(title.contains("Friend Request"))
-                        {
-                            System.out.println("Accepted friend request");
-                            service.sendNotificationToUser("Request accepted", "Vanshika Chowdhary", "The user clicked yes");
-                        }
-                        else if(title.contains("Request")) dialog.dismiss();
-                            //TODO: implement this and move all this to the friendsctivity, requires two emulators working
-                        // addFriend();
+                        DatabaseReference user = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("username");
+                        user.addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                if(title.contains("Friend Request"))
+                                {
+
+                                    System.out.println("Accepted friend request");
+                                    service.sendNotificationToUser("Request accepted", from, from +" clicked yes", dataSnapshot.getValue().toString());
+                                }
+                                else if(title.contains("Request")) dialog.dismiss();
+                                //TODO: implement this and move all this to the friendsctivity, requires two emulators working
+                                // addFriend();
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
                     }
                 })
                 .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(final DialogInterface dialog, int which) {
                         // do nothing
-                        if(title.contains("Friend Request"))
-                            service.sendNotificationToUser("Request denied", "Vanshika Chowdhary", "The user clicked no");
-                        else if(title.contains("Request")) dialog.dismiss();
+                        DatabaseReference user = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("username");
+                        user.addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                if(title.contains("Friend Request"))
+                                    service.sendNotificationToUser("Request denied", from, "The user clicked no", dataSnapshot.getValue().toString());
+                                else if(title.contains("Request")) dialog.dismiss();
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+
                     }
                 })
                 .setIcon(android.R.drawable.ic_dialog_alert)
