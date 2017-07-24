@@ -6,7 +6,7 @@ var googleMapsClient = require('@google/maps').createClient({
 });
 var polyline = require('polyline'); 
 // var directionsService = new google.maps.DirectionsService(); 
-
+var userRoutePoints; 
 var API_KEY = "AAAAocDkZCY:APA91bHJuCimRpfEHM-AFZrRatohUZI8X5g4iUQvbftj6bpyutq2n62wGAcpcZcCzTOnUCOq4mtHxt9ousC_qWS56V99uIitjjQcpjsoFQ5QyeXzkguArPptGZNDsADf6LeodtugoqlZ" 
 // Your Firebase Cloud Messaging Server API key
 
@@ -25,7 +25,7 @@ admin.initializeApp({
 ref = admin.database().ref();
 
 // Fetch user route 
-function getRoute(originLat, originLong, destinationString) 
+function getRoute(originLat, originLong, destinationString, callback) 
 {
 	var points = []; 
 	
@@ -76,13 +76,29 @@ function getRoute(originLat, originLong, destinationString)
 				{
 					points.push(routePoints[i]); 
 				} 
-				
 			}
+			callback(null, routePoints);
 		}
-		else console.log("not possible bruh"); 
+		else
+		{
+			console.log("not possible bruh"); 
+			callback(status.status); 
+		} 
 	}); 
 	
-	return points; 
+// 	console.log(points); 
+	 
+}
+
+function handleResult(err, result) 
+{
+	// console.log(result); 
+	if (err) 
+	{
+		console.log("Error message"); 
+		console.log(err.toString());
+	}
+	return result; 
 }
 
 function onSuccess()
@@ -136,13 +152,10 @@ function sendNotificationToUser(username, message, titleText, fromU, onSuccess) 
 // start listening
 // listenForNotificationRequests();
 // console.log("starting now");
-var userRoute = getRoute(42.283429, -71.653056, "90 West Main St., Westborough MA 01581");
-var friendRoute = getRoute(42.285051,  -71.656522, "20 Fisher St, Westborough, MA 01581"); 
 console.log("USER ROUTE: ");
+var userRoute = getRoute(42.283429, -71.653056, "90 West Main St., Westborough MA 01581", handleResult);
+var friendRoute = getRoute(42.285051,  -71.656522, "20 Fisher St, Westborough, MA 01581", handleResult); 
 console.log(userRoute); 
-for (var i = 0; i < userRoute.length; i++) 
-{
-	console.log(userRoute[i]);
-}
-console.log("FRIEND ROUTE: "); 
-console.log(friendRoute); 
+// console.log(userRoute); 
+// console.log("FRIEND ROUTE: "); 
+// console.log(friendRoute); 
