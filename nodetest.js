@@ -1,11 +1,17 @@
 var admin = require('firebase-admin');
 var request = require('request');
+// Create Google API client 
+var googleMapsClient = require('@google/maps').createClient({
+  key: 'AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk'
+});
+var polyline = require('polyline'); 
+// var directionsService = new google.maps.DirectionsService(); 
 
 var API_KEY = "AAAAocDkZCY:APA91bHJuCimRpfEHM-AFZrRatohUZI8X5g4iUQvbftj6bpyutq2n62wGAcpcZcCzTOnUCOq4mtHxt9ousC_qWS56V99uIitjjQcpjsoFQ5QyeXzkguArPptGZNDsADf6LeodtugoqlZ" 
 // Your Firebase Cloud Messaging Server API key
 
 // Fetch the service account key JSON file contents
-var serviceAccount = require("C:/Users/Girls Who Code/Desktop/wwm-admin-key.json");
+// var serviceAccount = require("C:/Users/Girls Who Code/Desktop/wwm-admin-key.json");
 
 // Initialize the app with a service account, granting admin privileges
 admin.initializeApp({
@@ -17,6 +23,67 @@ admin.initializeApp({
   databaseURL: "https://wwithme-25166.firebaseio.com/"
 });
 ref = admin.database().ref();
+
+// Fetch user route 
+function getRoute(originLat, originLong, destinationString) 
+{
+	var points = []; 
+	
+	// Create request 
+	var request = {
+		origin: [originLat, originLong], 
+		destination: destinationString, 
+		mode: 'walking'
+	};
+	
+	// Send request 
+	googleMapsClient.directions(request, function(result, status) {
+		// Check for successful request 
+		if (status.status == 200) {
+			
+			// Get all routes in the result 
+			var routes = status.json.routes; 
+			var routePoints = []; 
+			// For each route 
+			for (var i = 0; i < routes.length; i++) 
+			{	
+				// Find all points in this route 
+				
+				// Get the legs in this route 
+				var legs = routes[i].legs;
+				// For each leg  
+				for (var j = 0; j < legs.length; j++) 
+				{	
+ 					// Get all the steps in this leg  
+					var steps = legs[j].steps; 
+					
+					// For each step 
+					for (var k = 0; k < steps.length; k++) 
+					{
+ 						// Get the points in the polyline for this step
+						var decodedPolylinePoints = polyline.decode(steps[k].polyline.points); 
+						for (var m = 0; m < decodedPolylinePoints.length; m++) 
+						{
+							// Add each point in the polyline for this step to the points for the whole route 
+							routePoints.push(decodedPolylinePoints[m]); 
+						}
+					}
+				}
+				
+				// console.log("Points in this route: "); 
+				// console.log(routePoints);  
+				for (var i = 0; i < routePoints.length; i++) 
+				{
+					points.push(routePoints[i]); 
+				} 
+				
+			}
+		}
+		else console.log("not possible bruh"); 
+	}); 
+	
+	return points; 
+}
 
 function onSuccess()
 {
@@ -67,6 +134,15 @@ function sendNotificationToUser(username, message, titleText, fromU, onSuccess) 
 }
 
 // start listening
-listenForNotificationRequests();
-console.log("starting now");
-
+// listenForNotificationRequests();
+// console.log("starting now");
+var userRoute = getRoute(42.283429, -71.653056, "90 West Main St., Westborough MA 01581");
+var friendRoute = getRoute(42.285051,  -71.656522, "20 Fisher St, Westborough, MA 01581"); 
+console.log("USER ROUTE: ");
+console.log(userRoute); 
+for (var i = 0; i < userRoute.length; i++) 
+{
+	console.log(userRoute[i]);
+}
+console.log("FRIEND ROUTE: "); 
+console.log(friendRoute); 

@@ -38,7 +38,7 @@ dependencies {
     compile 'com.google.firebase:firebase-storage:10.0.0'
     compile 'com.google.firebase:firebase-messaging:10.0.1'
     compile 'com.android.support:recyclerview-v7:22.2.1'
-
+    compile 'com.google.maps:google-maps-services:0.1.20'
     testCompile 'junit:junit:4.12'
 }
 
