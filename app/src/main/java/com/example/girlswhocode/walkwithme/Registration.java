@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -32,15 +33,16 @@ public class Registration extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registration);
+        setTitle("Create A New Account");
 
         FirebaseDatabase db = FirebaseDatabase.getInstance();
         final DatabaseReference users = db.getReference().child("users");
 
         // Get UI elements
-        Button cancelReg = (Button) findViewById(R.id.cancelRegistrationButton);
+        TextView cancelReg = (TextView) findViewById(R.id.cancelRegistrationButton);
         email = (EditText) findViewById(R.id.emailAddress);
         password = (EditText) findViewById(R.id.password);
-        username = (EditText) findViewById(R.id.emailAddress);
+        username = (EditText) findViewById(R.id.name);
         phoneNumber = (EditText) findViewById(R.id.phoneNumber);
         regButton = (Button) findViewById(R.id.registerButton);
 

@@ -5,23 +5,21 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 public class Login extends AppCompatActivity {
 
     Button loginButton;
-    Button registerButton;
+    TextView registerButton;
     EditText emailAddress;
     EditText password;
     private FirebaseAuth mAuth;
@@ -31,12 +29,13 @@ public class Login extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        setTitle("Login");
 
         // Obtain UI elementschowdhar
         loginButton = (Button) findViewById(R.id.loginButton);
-        emailAddress = (EditText) findViewById(R.id.emailAddress);
+        emailAddress = (EditText) findViewById(R.id.name);
         password = (EditText) findViewById(R.id.password);
-        registerButton = (Button) findViewById(R.id.regButton);
+        registerButton = (TextView) findViewById(R.id.regButton);
  
         // Initialize firebse
         mAuth = FirebaseAuth.getInstance();

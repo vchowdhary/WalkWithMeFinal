@@ -183,7 +183,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         user.addValueEventListener(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
-                                if(title.contains("Friend Request"))
+                                if(title.equals("Walk With Me: Friend Request"))
                                 {
 
                                     System.out.println("Accepted friend request");
@@ -208,7 +208,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         user.addValueEventListener(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
-                                if(title.contains("Friend Request"))
+                                if(title.equals("Walk With Me: Friend Request"))
                                     service.sendNotificationToUser("Request denied", from, "The user clicked no", dataSnapshot.getValue().toString());
                                 else if(title.contains("Request")) dialog.dismiss();
                             }
