@@ -3,6 +3,7 @@ package com.example.girlswhocode.walkwithme;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -14,12 +15,15 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutCompat;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,6 +55,15 @@ public class PanicActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_panic);
+        setTitle("Panic");
+
+        ImageView lineColorCode = (ImageView) findViewById(R.id.police);
+        int color = Color.parseColor("#FFFFFF"); //The color u want
+        lineColorCode.setColorFilter(color);
+
+        ImageView lineColorCode2 = (ImageView) findViewById(R.id.phoneImage);
+        int color2 = Color.parseColor("#FFFFFF"); //The color u want
+        lineColorCode2.setColorFilter(color2);
 
         Intent i = getIntent();
         user = new User(FirebaseAuth.getInstance().getCurrentUser());
@@ -58,7 +71,7 @@ public class PanicActivity extends AppCompatActivity {
         user.setActivity(PanicActivity.this);
         user.startLocation();
 
-        TextView call911 = (TextView) findViewById(R.id.call911Button);
+        LinearLayout call911 = (LinearLayout) findViewById(R.id.call911Button);
         call911.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
@@ -79,7 +92,7 @@ public class PanicActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton callAFriend = (ImageButton) findViewById(R.id.phoneCallButton);
+        LinearLayout callAFriend = (LinearLayout) findViewById(R.id.phoneCallButton);
         callAFriend.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
@@ -110,22 +123,11 @@ public class PanicActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton sendAMessage = (ImageButton) findViewById(R.id.sendAMessage);
+        LinearLayout sendAMessage = (LinearLayout) findViewById(R.id.sendAMessage);
         sendAMessage.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
                 sendMessage();
-            }
-        });
-
-        Button cancel = (Button) findViewById(R.id.cancelButton);
-        cancel.setOnClickListener(new View.OnClickListener() {
-
-            public void onClick(View v) {
-                // TODO Auto-generated method stub
-                System.out.println("Switching to map!");
-                Intent call911Intent = new Intent(PanicActivity.this, MapActivity.class);
-                startActivity(call911Intent);
             }
         });
     }
