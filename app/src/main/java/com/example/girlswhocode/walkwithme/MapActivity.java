@@ -40,6 +40,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.appindexing.Action;
+import com.google.firebase.appindexing.FirebaseUserActions;
+import com.google.firebase.appindexing.builders.Actions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -47,6 +50,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.maps.DirectionsApi;
+import com.google.maps.DirectionsApiRequest;
+import com.google.maps.GeoApiContext;
+import com.google.maps.PendingResult;
+import com.google.maps.model.DirectionsResult;
+import com.google.maps.model.DirectionsRoute;
+import com.google.maps.model.TravelMode;
 
 import java.util.ArrayList;
 
@@ -115,7 +125,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             }
         });
-            service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there", username[0]);
+           // service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there", username[0]);
             Log.wtf("WTF I ACTUALLY DID IT", "Notification sent to the damn user fool");
 
         MyFirebaseInstanceIDService secondservice = new MyFirebaseInstanceIDService();
@@ -143,25 +153,46 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     input+="%2C";
                 }
 
-                final String[] waypoints = {"42.2839,-71.654", "42.285659, -71.653883"};
+                GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
+                DirectionsApiRequest apiRequest = DirectionsApi.newRequest(context);
+                apiRequest.origin(new com.google.maps.model.LatLng(latLng.latitude, latLng.longitude));
+                apiRequest.destination(input);
+                apiRequest.mode(TravelMode.WALKING);
+                apiRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+                    @Override
+                    public void onResult(DirectionsResult result) {
+                        DirectionsRoute[] routes = result.routes;
+                        for (DirectionsRoute route : routes)
+                        {
+                            System.out.println(route.summary); 
+                        }
+                    }
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
-                builder.setTitle("Make your selection");
-                final String finalInput = input;
-                builder.setItems(waypoints, new DialogInterface.OnClickListener() {
-                    @RequiresApi(api = Build.VERSION_CODES.DONUT)
-                    public void onClick(DialogInterface dialog, int item) {
-                        // Do something with the selection
-                        Toast.makeText(MapActivity.this, finalInput, Toast.LENGTH_SHORT).show();
-                        Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin="+ latLng.latitude +","+ latLng.longitude +"&destination="+ finalInput +"&travelmode=walking&waypoints=" + waypoints[item]);
+                    @Override
+                    public void onFailure(Throwable e) {
 
-                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-                        mapIntent.setPackage("com.google.android.apps.maps");
-                        startActivity(mapIntent);
                     }
                 });
-                AlertDialog alert = builder.create();
-                alert.show();
+
+              //  final String[] waypoints = {"42.2839,-71.654", "42.285659, -71.653883"};
+
+//                AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+//                builder.setTitle("Make your selection");
+//                final String finalInput = input;
+//                builder.setItems(waypoints, new DialogInterface.OnClickListener() {
+//                    @RequiresApi(api = Build.VERSION_CODES.DONUT)
+//                    public void onClick(DialogInterface dialog, int item) {
+//                        // Do something with the selection
+//                        Toast.makeText(MapActivity.this, finalInput, Toast.LENGTH_SHORT).show();
+//                        Uri gmmIntentUri = Uri.parse("https://www.google.com/maps/dir/?api=1&origin="+ latLng.latitude +","+ latLng.longitude +"&destination="+ finalInput +"&travelmode=walking&waypoints=" + waypoints[item]);
+//
+//                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+//                        mapIntent.setPackage("com.google.android.apps.maps");
+//                        startActivity(mapIntent);
+//                    }
+//                });
+//                AlertDialog alert = builder.create();
+//                alert.show();
             }
         });
     }
@@ -500,6 +531,32 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onPause() {
         super.onPause();
         LocalBroadcastManager.getInstance(MapActivity.this).unregisterReceiver(mMessageReceiver);
+    }
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        return Actions.newView("Map", "http://[ENTER-YOUR-URL-HERE]");
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        FirebaseUserActions.getInstance().start(getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        FirebaseUserActions.getInstance().end(getIndexApiAction());
+        super.onStop();
     }
 }
 
