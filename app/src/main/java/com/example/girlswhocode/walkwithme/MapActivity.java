@@ -54,11 +54,14 @@ import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
+import com.google.maps.android.SphericalUtil;
+import com.google.maps.model.DirectionsLeg;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
@@ -80,6 +83,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     User user;
     MyFirebaseMessagingService service = new MyFirebaseMessagingService();
     private BroadcastReceiver mMessageReceiver;
+    ArrayList<List<com.google.maps.model.LatLng>> userRoutes = new ArrayList<List<com.google.maps.model.LatLng>>();
+    List<com.google.maps.model.LatLng> userPoints;
+    String friendLoc = "";
+    String friendDest = "";
+    ArrayList<List<com.google.maps.model.LatLng>> friendRoutes = new ArrayList<List<com.google.maps.model.LatLng>>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,27 +161,137 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     input+="%2C";
                 }
 
+                // Create request
                 GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
                 DirectionsApiRequest apiRequest = DirectionsApi.newRequest(context);
                 apiRequest.origin(new com.google.maps.model.LatLng(latLng.latitude, latLng.longitude));
                 apiRequest.destination(input);
                 apiRequest.mode(TravelMode.WALKING);
+                DatabaseReference db = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("destination");
+                db.setValue(destination);
+
                 apiRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+                    // Handle result
                     @Override
                     public void onResult(DirectionsResult result) {
+                        // Get routes
                         DirectionsRoute[] routes = result.routes;
+                        System.out.println("ROUTES FOUND: " + routes);
+                        // For each route
                         for (DirectionsRoute route : routes)
                         {
-                            System.out.println(route.summary); 
+                            // Get all points in the polyline
+                            List<com.google.maps.model.LatLng> routePoints = route.overviewPolyline.decodePath();
+                            System.out.println("POINTS IN ROUTE: " + routePoints);
+                          //  System.out.println(userPoints);
+                            userRoutes.add(routePoints);
+                            System.out.println("userRoutes after added: " + userRoutes);
+
+                        }
+
+                        System.out.println(userRoutes);
+
+                        ArrayList<String[]> optimalFriends = new ArrayList<String[]>();
+                        List<LatLng> friendPoints;
+                        for (String uid: uids)
+                        {
+                            GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
+                            DirectionsApiRequest friendRouteRequest = DirectionsApi.newRequest(context);
+                            FirebaseDatabase datab = FirebaseDatabase.getInstance();
+                            DatabaseReference location = datab.getReference("users").child(uid).child("location");
+                            location.addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    System.out.println(dataSnapshot.toString());
+                                    friendLoc = dataSnapshot.getValue().toString();
+                                    System.out.println("Friend's location retrieved from db: " + friendLoc);
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+
+                            DatabaseReference dest = datab.getReference("users").child(uid).child("destination");
+
+                            dest.addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    friendDest = dataSnapshot.getValue().toString();
+                                    System.out.println("Destination retrieved from database: " + friendDest);
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+
+                            System.out.println(friendLoc);
+                            String[] fLoc = friendLoc.split(",");
+                            System.out.println(friendDest);
+                            friendRouteRequest.origin(new com.google.maps.model.LatLng(Double.parseDouble(fLoc[0]), Double.parseDouble(fLoc[1])));
+                            friendRouteRequest.destination(friendDest);
+                            friendRouteRequest.mode(TravelMode.WALKING);
+                            friendRouteRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+                                @Override
+                                public void onResult(DirectionsResult result) {
+                                    System.out.println("Friend route finding request successful");
+                                    DirectionsRoute[] routes = result.routes;
+                                    for (DirectionsRoute route : routes)
+                                    {
+                                        List<com.google.maps.model.LatLng> routePts = route.overviewPolyline.decodePath();
+                                        friendRoutes.add(routePts);
+                                    }
+                                    System.out.println("Possible friend routes: " + friendRoutes);
+                                    System.out.println("friendRoutes size: " + friendRoutes.size());
+                                    System.out.println("userRoutes size: " + userRoutes.size());
+
+                                    if (friendRoutes.size() <= userRoutes.size())
+                                    {
+                                        System.out.println("FriendRoutes <= userRoutes");
+                                        for (List<com.google.maps.model.LatLng> routePoints : friendRoutes)
+                                        {
+                                            for (List<com.google.maps.model.LatLng> usrRtPts : userRoutes)
+                                            {
+                                                System.out.println("Friend route: " + routePoints);
+                                                System.out.println("User route: " + usrRtPts);
+                                                int[] intersectionPts = findIntersection(routePoints, usrRtPts);
+                                                System.out.println("Intersection Points: " + intersectionPts);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (List<com.google.maps.model.LatLng> routePoints: userRoutes)
+                                        {
+                                            for (List<com.google.maps.model.LatLng> usrRtPts : friendRoutes)
+                                            {
+                                                int[] intersectionPts = findIntersection(routePoints, usrRtPts);
+                                                System.out.println(intersectionPts);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Throwable e) {
+                                    System.out.println("Error with friend request: " + e.getMessage());
+                                }
+                            });
                         }
                     }
 
                     @Override
                     public void onFailure(Throwable e) {
-
+                        System.out.println(e.getMessage());
                     }
                 });
 
+
+
+                //TODO: get the friends' routes....
               //  final String[] waypoints = {"42.2839,-71.654", "42.285659, -71.653883"};
 
 //                AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
@@ -195,6 +313,105 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 //                alert.show();
             }
         });
+    }
+
+    private int[] findIntersection(List<com.google.maps.model.LatLng> routePoints, List<com.google.maps.model.LatLng> usrRtPts) {
+        System.out.println("Finding intersection points");
+        int i = 0;
+        int j = 0;
+        int startIntersectionIndex = -1;
+        System.out.println("Finding start intersection");
+        while (i < routePoints.size() && j < usrRtPts.size())
+        {
+            LatLng routePointLatLng = new LatLng(routePoints.get(i).lat, routePoints.get(i).lng);
+            LatLng usrRtPtLatLng = new LatLng(usrRtPts.get(j).lat, usrRtPts.get(j).lng);
+            double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
+            System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+            double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
+            System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+            if (distance > 10 )
+            {
+                if (bearing < 0)
+                {
+                    System.out.println("farther behind; need to move up");
+                    j++;
+                }
+                else
+                {
+                    System.out.println("further ahead, need the other route to move up");
+                    i++;
+                }
+            }
+            else
+            {
+                startIntersectionIndex = i;
+                break;
+            }
+        }
+        System.out.println("Start Intersection Index: " + startIntersectionIndex);
+
+        System.out.println("route points size: " + routePoints.size());
+        System.out.println("usr rt pts size: " + usrRtPts.size());
+        int l = routePoints.size() - 1;
+        int m = usrRtPts.size() - 1;
+        int endIntersectionIndex = -1;
+        System.out.println("Finding end intersection");
+        while (l > 0 && m > 0)
+        {
+            LatLng routePointLatLng = new LatLng(routePoints.get(l).lat, routePoints.get(l).lng);
+            LatLng usrRtPtLatLng = new LatLng(usrRtPts.get(m).lat, usrRtPts.get(m).lng);
+            double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
+            System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+            double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
+            System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+            if (distance > 10 && bearing < 0)
+            {
+                System.out.println("further behind; need to move up");
+                m--;
+            }
+            else if (distance > 10 && bearing > 0)
+            {
+                System.out.println("further ahead, need the other route to move up");
+                l--;
+            }
+            else
+            {
+                endIntersectionIndex = l;
+                break;
+            }
+        }
+        System.out.println("End Intersection Index: " + endIntersectionIndex);
+
+        int[] intersectionPts = {startIntersectionIndex, endIntersectionIndex};
+        System.out.println("intersection pts: " + intersectionPts);
+        return intersectionPts;
+    }
+
+    public static double distance(double lat1, double lat2, double lon1,
+                                  double lon2, double el1, double el2) {
+
+        final int R = 6371; // Radius of the earth
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c * 1000; // convert to meters
+
+        double height = el1 - el2;
+
+        distance = Math.pow(distance, 2) + Math.pow(height, 2);
+        return Math.sqrt(distance);
+    }
+
+    private double findBearing(double lat1, double lat2, double lon1,
+                               double lon2)
+    {
+        double y = Math.sin(lon2-lon1)*Math.cos(lat2);
+        double x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(lon2-lon1);
+        return Math.atan2(y, x)*180/Math.PI;
     }
 
     private void alert(final String from, String body, final String title) {
@@ -299,6 +516,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap gMap) {
         mGoogleMap = gMap;
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
             return;
         }
 
