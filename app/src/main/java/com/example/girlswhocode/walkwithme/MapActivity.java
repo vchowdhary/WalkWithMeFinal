@@ -96,7 +96,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-         mMessageReceiver = new BroadcastReceiver() {
+        mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 // Extract data included in the Intent
@@ -136,8 +136,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             }
         });
-           // service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there", username[0]);
-            Log.wtf("WTF I ACTUALLY DID IT", "Notification sent to the damn user fool");
+        // service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there", username[0]);
+        Log.wtf("WTF I ACTUALLY DID IT", "Notification sent to the damn user fool");
 
         MyFirebaseInstanceIDService secondservice = new MyFirebaseInstanceIDService();
         secondservice.onRefreshToken();
@@ -147,25 +147,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             public void onClick(View v) {
 
-                // TODO Auto-generated method stub
-               //set up navigation here too
-                //switch to panic activity
-
+                //Getting the user's destination from the textfield
                 final TextView endField = (TextView) findViewById(R.id.endField);
                 String destination = endField.getText().toString();
                 String[] parts1 = destination.split(",");
                 String input = "";
-                for(int i = 0; i < parts1.length; i++)
-                {
+                for (int i = 0; i < parts1.length; i++) {
                     String[] parts = parts1[i].split(" ");
-                    for(int j = 0; j < parts.length; j++)
-                    {
-                        input+=parts[j]+"+";
+                    for (int j = 0; j < parts.length; j++) {
+                        input += parts[j] + "+";
                     }
-                    input+="%2C";
+                    input += "%2C";
                 }
 
-                // Create request
                 GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
                 DirectionsApiRequest apiRequest = DirectionsApi.newRequest(context);
                 apiRequest.origin(new com.google.maps.model.LatLng(latLng.latitude, latLng.longitude));
@@ -174,6 +168,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 DatabaseReference db = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("destination");
                 db.setValue(destination);
 
+
+            }
+        });
+    }
+
+
+                // TODO Auto-generated method stub
+            /*
                 apiRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
                     // Handle result
                     @Override
@@ -193,7 +195,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                         }
 
-                        System.out.println(userRoutes);
+                        //System.out.println(userRoutes);
 
                         ArrayList<String[]> optimalFriends = new ArrayList<String[]>();
                         List<LatLng> friendPoints;
@@ -232,9 +234,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 }
                             });
 
-                            System.out.println(friendLoc);
+                            //System.out.println(friendLoc);
                             String[] fLoc = friendLoc.split(",");
-                            System.out.println(friendDest);
+                            //System.out.println(friendDest);
                             friendRouteRequest.origin(new com.google.maps.model.LatLng(Double.parseDouble(fLoc[0]), Double.parseDouble(fLoc[1])));
                             friendRouteRequest.destination(friendDest);
                             friendRouteRequest.mode(TravelMode.WALKING);
@@ -252,77 +254,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                     System.out.println("friendRoutes size: " + friendRoutes.size());
                                     System.out.println("userRoutes size: " + userRoutes.size());
 
-                                    if (friendRoutes.size() <= userRoutes.size())
+                                    if (friendRoutes.size() < userRoutes.size())
                                     {
-                                        System.out.println("FriendRoutes <= userRoutes");
+                                        System.out.println("FriendRoutes < userRoutes");
                                         for (final List<com.google.maps.model.LatLng> routePoints : friendRoutes)
                                         {
                                             for (List<com.google.maps.model.LatLng> usrRtPts : userRoutes)
                                             {
-                                                System.out.println("Friend route: " + routePoints);
-                                                System.out.println("User route: " + usrRtPts);
+                                                //System.out.println("Friend route: " + routePoints);
+                                                //System.out.println("User route: " + usrRtPts);
                                                 int[] intersectionPts = findIntersection(routePoints, usrRtPts);
                                                 System.out.println("Intersection Points: " + intersectionPts);
 
-                                                System.out.println("Finding waypoints");
-                                                com.google.maps.model.LatLng startIntersection = routePoints.get(intersectionPts[0]);
-                                                com.google.maps.model.LatLng endIntersection = routePoints.get(intersectionPts[1]);
-                                                GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
-                                                DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
-                                                wayPointsRequest.origin(startIntersection);
-                                                wayPointsRequest.destination(endIntersection);
-                                                wayPointsRequest.mode(TravelMode.WALKING);
-                                                wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
-                                                    @Override
-                                                    public void onResult(DirectionsResult result) {
-                                                        System.out.println("Found waypoints successfully");
-                                                        DirectionsRoute[] routesFound = result.routes;
-                                                        ArrayList<com.google.maps.model.LatLng> routeWayPoints = (ArrayList<com.google.maps.model.LatLng>) routesFound[0].overviewPolyline.decodePath();
-                                                        System.out.println("Number of way points found: " + routeWayPoints.size());
-                                                        if (routeWayPoints.size() <= 23)
-                                                        {
-                                                            for (com.google.maps.model.LatLng routeWayPoint : routeWayPoints)
-                                                            {
-                                                                wayPoints.add(routeWayPoint);
-                                                            }
-                                                            System.out.println("Waypoints: " + wayPoints);
-                                                        }
-                                                        else
-                                                        {
-                                                            System.out.println(routeWayPoints.size()/23.0);
-                                                            double factor = (double) (Math.round((double) routeWayPoints.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
-                                                            factor = (int) (Math.round(factor));
-                                                            System.out.println("Factor: " + factor);
-                                                            int index = 0;
-                                                            while (index < routeWayPoints.size())
-                                                            {
-                                                                wayPoints.add(routeWayPoints.get(index));
-                                                                index += factor;
-
-                                                            }
-                                                            System.out.println("Number of waypoints, final: " + wayPoints.size());
-                                                            System.out.println("Waypoints: " + wayPoints);
-                                                        }
-
-                                                    }
-
-                                                    @Override
-                                                    public void onFailure(Throwable e) {
-
-                                                    }
-                                                });
-
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        for (final List<com.google.maps.model.LatLng> routePoints: userRoutes)
-                                        {
-                                            for (List<com.google.maps.model.LatLng> usrRtPts : friendRoutes)
-                                            {
-                                                int[] intersectionPts = findIntersection(routePoints, usrRtPts);
-                                                System.out.println(intersectionPts);
                                                 System.out.println("Finding waypoints");
                                                 com.google.maps.model.LatLng startIntersection = routePoints.get(intersectionPts[0]);
                                                 com.google.maps.model.LatLng endIntersection = routePoints.get(intersectionPts[1]);
@@ -398,6 +341,94 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                                                     }
                                                 });
+
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        System.out.println("UserRoutes > FriendRoutes");
+                                        for (final List<com.google.maps.model.LatLng> routePoints: userRoutes)
+                                        {
+                                            for (List<com.google.maps.model.LatLng> usrRtPts : friendRoutes)
+                                            {
+                                                int[] intersectionPts = findIntersection(routePoints, usrRtPts);
+                                                //System.out.println(intersectionPts);
+                                                System.out.println("Finding waypoints");
+                                                com.google.maps.model.LatLng startIntersection = routePoints.get(intersectionPts[0]);
+                                                com.google.maps.model.LatLng endIntersection = routePoints.get(intersectionPts[1]);
+                                                GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
+                                                DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
+                                                wayPointsRequest.origin(startIntersection);
+                                                wayPointsRequest.destination(endIntersection);
+                                                wayPointsRequest.mode(TravelMode.WALKING);
+                                                final com.google.maps.model.LatLng firstRoutePoint = routePoints.get(0);
+                                                final com.google.maps.model.LatLng lastRoutePoint = routePoints.get(routePoints.size() - 1);
+                                                wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+                                                    @Override
+                                                    public void onResult(DirectionsResult result) {
+                                                        wayPoints = new ArrayList<com.google.maps.model.LatLng>();
+                                                        System.out.println("Found waypoints successfully");
+                                                        DirectionsRoute[] routesFound = result.routes;
+                                                        ArrayList<com.google.maps.model.LatLng> routeWayPoints = (ArrayList<com.google.maps.model.LatLng>) routesFound[0].overviewPolyline.decodePath();
+                                                        System.out.println("Number of way points found: " + routeWayPoints.size());
+                                                        if (routeWayPoints.size() <= 23)
+                                                        {
+                                                            wayPoints = new ArrayList<com.google.maps.model.LatLng>();
+                                                            for (com.google.maps.model.LatLng routeWayPoint : routeWayPoints)
+                                                            {
+                                                                wayPoints.add(routeWayPoint);
+                                                            }
+                                                            System.out.println("Waypoints: " + wayPoints);
+                                                            double intersectionDist = distance(wayPoints.get(0).lat, wayPoints.get(wayPoints.size()-1).lat,
+                                                                    wayPoints.get(0).lng, wayPoints.get(wayPoints.size()-1).lng,
+                                                                    0, 0);
+                                                            System.out.println("Intersection dist: " + intersectionDist);
+                                                            double routeLength = distance(firstRoutePoint.lat, lastRoutePoint.lat,
+                                                                    firstRoutePoint.lng, lastRoutePoint.lng,
+                                                                    0, 0);
+                                                            System.out.println("Route length: " + routeLength);
+                                                            double percentage = intersectionDist/routeLength;
+                                                            System.out.println("Percentage: " + percentage);
+                                                            percentageOverlapsForFriend.add(percentage);
+                                                        }
+                                                        else
+                                                        {
+                                                            System.out.println(routeWayPoints.size()/23.0);
+                                                            double factor = (double) (Math.round((double) routeWayPoints.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
+                                                            factor = (int) (Math.round(factor));
+                                                            System.out.println("Factor: " + factor);
+                                                            int index = 0;
+                                                            wayPoints = new ArrayList<com.google.maps.model.LatLng>();
+                                                            while (index < routeWayPoints.size())
+                                                            {
+                                                                wayPoints.add(routeWayPoints.get(index));
+                                                                index += factor;
+
+                                                            }
+                                                            System.out.println("Number of waypoints, final: " + wayPoints.size());
+                                                            System.out.println("Waypoints: " + wayPoints);
+
+                                                            double intersectionDist = distance(wayPoints.get(0).lat, wayPoints.get(wayPoints.size()-1).lat,
+                                                                    wayPoints.get(0).lng, wayPoints.get(wayPoints.size()-1).lng,
+                                                                    0, 0);
+                                                            System.out.println("Intersection dist: " + intersectionDist);
+                                                            double routeLength = distance(firstRoutePoint.lat, lastRoutePoint.lat,
+                                                                    firstRoutePoint.lng, lastRoutePoint.lng,
+                                                                    0, 0);
+                                                            System.out.println("Route length: " + routeLength);
+                                                            double percentage = intersectionDist/routeLength;
+                                                            System.out.println("Percentage: " + percentage);
+                                                            percentageOverlapsForFriend.add(new Object[] (percentage, );
+                                                        }
+
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(Throwable e) {
+
+                                                    }
+                                                });
                                             }
                                         }
                                     }
@@ -408,6 +439,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                     System.out.println("Error with friend request: " + e.getMessage());
                                 }
                             });
+
+                            percentageOverlapsForFriend = sort(percentageOverlapsForFriend, friendRo);
+                            optimalFriends.add(new Object[]{uid, friendRo})
                         }
                     }
 
@@ -440,8 +474,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 //                AlertDialog alert = builder.create();
 //                alert.show();
             }
-        });
-    }
+        });*/
 
     private int[] findIntersection(List<com.google.maps.model.LatLng> routePoints, List<com.google.maps.model.LatLng> usrRtPts) {
         System.out.println("Finding intersection points");
@@ -454,19 +487,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             LatLng routePointLatLng = new LatLng(routePoints.get(i).lat, routePoints.get(i).lng);
             LatLng usrRtPtLatLng = new LatLng(usrRtPts.get(j).lat, usrRtPts.get(j).lng);
             double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
-            System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+            //System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
             double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
-            System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+            //System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
             if (distance > 10 )
             {
                 if (bearing < 0)
                 {
-                    System.out.println("farther behind; need to move up");
+                    //System.out.println("farther behind; need to move up");
                     j++;
                 }
                 else
                 {
-                    System.out.println("further ahead, need the other route to move up");
+                    //System.out.println("further ahead, need the other route to move up");
                     i++;
                 }
             }
@@ -489,19 +522,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             LatLng routePointLatLng = new LatLng(routePoints.get(l).lat, routePoints.get(l).lng);
             LatLng usrRtPtLatLng = new LatLng(usrRtPts.get(m).lat, usrRtPts.get(m).lng);
             double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
-            System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+            //System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
             double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
-            System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+            //System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
             if (distance > 10)
             {
                 if(bearing < 0)
                 {
-                    System.out.println("further behind; need to move up");
+                    //System.out.println("further behind; need to move up");
                     m--;
                 }
                 else
                 {
-                    System.out.println("further ahead, need the other route to move up");
+                    //System.out.println("further ahead, need the other route to move up");
                     l--;
                 }
             }

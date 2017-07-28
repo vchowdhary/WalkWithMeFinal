@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -30,7 +31,7 @@ public class FriendsActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private RecyclerAdapter mAdapter;
     private EditText friendName;
-    private Button addFriend;
+    private ImageButton addFriend;
     private ArrayList<String> names = new ArrayList<String>();
     private ArrayList<String> uids = new ArrayList<String>();
     User user;
@@ -51,7 +52,7 @@ public class FriendsActivity extends AppCompatActivity {
         System.out.println("Added linear layout manager to recycler view");
         friendName = (EditText) findViewById(R.id.nameToBeAdded);
         System.out.println("Accessed friendName editText");
-        addFriend = (Button) findViewById(R.id.addFriendButton);
+        addFriend = (ImageButton) findViewById(R.id.addFriendButton);
         System.out.println("Accessed addFriend button");
         friendName.setText("");
 
