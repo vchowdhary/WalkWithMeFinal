@@ -168,6 +168,27 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 DatabaseReference db = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("destination");
                 db.setValue(destination);
 
+                apiRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+                    @Override
+                    public void onResult(DirectionsResult result) {
+                        DirectionsRoute[] routes = result.routes;
+                        System.out.println("ROUTES FOUND: " + routes);
+                        for(int i = 0; i < routes.length; i++)
+                        {
+                            userRoutes = getUserRoutes(routes[i]);
+                        }
+                        for(String friendUid: uids)
+                        {
+
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+
+                    }
+                });
+
 
             }
         });
