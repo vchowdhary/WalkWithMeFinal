@@ -62,7 +62,6 @@ import com.google.maps.model.TravelMode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
@@ -70,6 +69,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     static MapActivity INSTANCE;
     LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
+
+    GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
+    String[] routePath = {""};
+    ArrayList<String> userIdsToFindPolylines = new ArrayList<>();
+    ArrayList<String> userPolylines = new ArrayList<>();
 
     ArrayList<String> uids = new ArrayList<String>();
     int counter;
@@ -140,6 +144,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         // service.sendNotificationToUser("Friend Request", "shreyofsunshine", "Hi there", username[0]);
         Log.wtf("WTF I ACTUALLY DID IT", "Notification sent to the damn user fool");
 
+        userIdsToFindPolylines.add(FirebaseAuth.getInstance().getCurrentUser().getUid());
+
         MyFirebaseInstanceIDService secondservice = new MyFirebaseInstanceIDService();
         secondservice.onRefreshToken();
 
@@ -149,7 +155,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             public void onClick(View v) {
 
                 //Getting the user's destination from the textfield
-                /*final TextView endField = (TextView) findViewById(R.id.endField);
+                final TextView endField = (TextView) findViewById(R.id.endField);
                 String destination = endField.getText().toString();
                 String[] parts1 = destination.split(",");
                 String input = "";
@@ -161,40 +167,16 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     input += "%2C";
                 }
 
-                GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
-                DirectionsApiRequest apiRequest = DirectionsApi.newRequest(context);
-                apiRequest.origin(new com.google.maps.model.LatLng(latLng.latitude, latLng.longitude));
-                apiRequest.destination(input);
-                apiRequest.mode(TravelMode.WALKING);
                 DatabaseReference db = FirebaseDatabase.getInstance().getReference("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("destination");
                 db.setValue(destination);
+                System.out.println("Destination updated");
 
-                apiRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
-                    @Override
-                    public void onResult(DirectionsResult result) {
-                        DirectionsRoute[] routes = result.routes;
-                        System.out.println("ROUTES FOUND: " + routes);
-                        for(int i = 0; i < routes.length; i++)
-                        {
-                            userRoutes = getUserRoutes(routes[i]);
-                        }
-                        for(String friendUid: uids)
-                        {
-
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Throwable e) {
-
-                    }
-                });
-
-
-            }*/
+                System.out.println("Getting the user's route polyline");
+                getRoute();
             }
         });
     }
+
 
                 // TODO Auto-generated method stub
             /*
@@ -498,6 +480,89 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });*/
 
+    private void getRoute()
+    {
+        for (String uid : uids)
+        {
+            userIdsToFindPolylines.add(uid);
+        }
+        System.out.println("All items in userIdsToFindPolylines: " + userIdsToFindPolylines);
+
+        for (final String userID : userIdsToFindPolylines)
+        {
+            // Get database reference
+            FirebaseDatabase db = FirebaseDatabase.getInstance();
+            final DatabaseReference user = db.getReference().child("users").child(userID);
+            System.out.println("Got reference to the user when trying to make route request: " + user.toString());
+
+
+            // set origin
+            final DatabaseReference[] location = {user.child("location")};
+            System.out.println("Got reference to the user's location when trying to make route request: " + location[0].toString());
+            final String[] userLocation = new String[1];
+
+            location[0].addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    System.out.println("Location accessed from the database--trying to make request: " + dataSnapshot.getValue().toString());
+                    userLocation[0] = dataSnapshot.getValue().toString();
+                    System.out.println("User location from array right after being updated: " + userLocation[0]);
+
+                    DatabaseReference destination = user.child("destination");
+                    final String[] userDestination = new String[1];
+                    destination.addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.getValue().toString().equals("null")) routePath[0] = "Invalid: no destination";
+                            userDestination[0] = dataSnapshot.getValue().toString();
+                            System.out.println("User's destination after being retrieved from the database: " + userDestination[0]);
+
+                            DirectionsApiRequest routeRequest = DirectionsApi.newRequest(context);
+                            System.out.println("User location retrieved from the array: " + userLocation[0]);
+                            String[] locationLatLng = userLocation[0].split(", ");
+                            com.google.maps.model.LatLng userLocationCoord = new com.google.maps.model.LatLng(Double.parseDouble(locationLatLng[0]), Double.parseDouble(locationLatLng[1]));
+                            System.out.println("Route request's origin: " + userLocationCoord);
+                            routeRequest.origin(userLocationCoord);
+                            routeRequest.destination(userDestination[0]);
+                            System.out.println("Route request's destination: " + userDestination[0]);
+                            routeRequest.mode(TravelMode.WALKING);
+                            System.out.println("Route request after all qualities have been added: " + routeRequest.toString());
+
+                            routeRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+                                @Override
+                                public void onResult(DirectionsResult result) {
+                                    routePath[0] = result.routes[0].overviewPolyline.getEncodedPath();
+                                    String userRoutePolyline = routePath[0];
+                                    System.out.println("User's route polyline for uid " + userID + ": " + userRoutePolyline);
+                                    userPolylines.add(userRoutePolyline);
+                                    System.out.println("All user ids for which polylines have been found: " + userIdsToFindPolylines);
+                                    System.out.println("All polylines found: " + userPolylines);
+                                }
+
+                                @Override
+                                public void onFailure(Throwable e) {
+
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+        }
+
+    }
+
     private int[] findIntersection(List<com.google.maps.model.LatLng> routePoints, List<com.google.maps.model.LatLng> usrRtPts) {
         System.out.println("Finding intersection points");
         int i = 0;
@@ -685,10 +750,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 System.out.println("Switching to the panic activity...");
                 Intent switchPanic = new Intent(MapActivity.this, PanicActivity.class);
                 startActivity(switchPanic);
-                return true;
-
-            case R.id.settings_action:
-                startActivity(new Intent(MapActivity.this, SettingsActivity.class));
                 return true;
 
             default:
