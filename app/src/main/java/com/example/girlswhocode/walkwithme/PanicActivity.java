@@ -260,6 +260,9 @@ public class PanicActivity extends AppCompatActivity {
                 System.out.println("Switching to the panic activity...");
                 System.out.println("Already at the panic activity.");
                 return true;
+            case R.id.settings_action:
+                startActivity(new Intent(PanicActivity.this, SettingsActivity.class));
+                return true;
 
             default:
                 // If we got here, the user's action was not recognized.

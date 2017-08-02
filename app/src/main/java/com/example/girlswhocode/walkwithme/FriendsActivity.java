@@ -192,6 +192,9 @@ public class FriendsActivity extends AppCompatActivity {
                 Intent switchPanic = new Intent(FriendsActivity.this, PanicActivity.class);
                 startActivity(switchPanic);
                 return true;
+            case R.id.settings_action:
+                startActivity(new Intent(FriendsActivity.this, SettingsActivity.class));
+                return true;
 
             default:
                 // If we got here, the user's action was not recognized.

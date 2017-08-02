@@ -62,6 +62,7 @@ import com.google.maps.model.TravelMode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 
@@ -148,7 +149,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             public void onClick(View v) {
 
                 //Getting the user's destination from the textfield
-                final TextView endField = (TextView) findViewById(R.id.endField);
+                /*final TextView endField = (TextView) findViewById(R.id.endField);
                 String destination = endField.getText().toString();
                 String[] parts1 = destination.split(",");
                 String input = "";
@@ -190,10 +191,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 });
 
 
+            }*/
             }
         });
     }
-
 
                 // TODO Auto-generated method stub
             /*
@@ -684,6 +685,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 System.out.println("Switching to the panic activity...");
                 Intent switchPanic = new Intent(MapActivity.this, PanicActivity.class);
                 startActivity(switchPanic);
+                return true;
+
+            case R.id.settings_action:
+                startActivity(new Intent(MapActivity.this, SettingsActivity.class));
                 return true;
 
             default:
