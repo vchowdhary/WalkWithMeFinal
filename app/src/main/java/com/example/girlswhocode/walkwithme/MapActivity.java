@@ -179,10 +179,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 System.out.println(userIdsToFindPolylines);
 
                 getRoute = new RouteGetter(userIdsToFindPolylines);
-                CompletableFuture getRoutes = CompletableFuture.supplyAsync(() -> RouteGetter.findRoutes());
-                CompletableFuture getOptimalities = getRoutes.thenApplyAsync(RouteGetter::findOptimalities).thenAcceptAsync(RouteGetter::sortOptimalities).thenAccept(MapActivity::setOptimalities);
+                CompletableFuture routes = CompletableFuture.supplyAsync(() -> RouteGetter.findRoutes());
+              //  CompletableFuture getRoutes = CompletableFuture.supplyAsync(() -> RouteGetter.findRoutes()).thenRun(() -> System.out.println(getRoutes.isDone() + ": " + RouteGetter.routePoints));
+               // thenRun(() -> System.out.println("Route Points from GetRoute: " + RouteGetter.routePoints));
+//                CompletableFuture optimalities = getRoutes.thenComposeAsync(RouteGetter::findOptimalities).thenRunAsync(RouteGetter::sortOptimalities).thenRun(MapActivity::setOptimalities);
+//                optimalities.complete(null);
+//                System.out.println(optimalities);
+              //  CompletableFuture getOptimalities = getRoutes.thenApplyAsync(RouteGetter::findOptimalities).thenAcceptAsync(RouteGetter::sortOptimalities).thenAccept(MapActivity::setOptimalities);
             }
         });
+    }
+
+    private static void setOptimalities() {
+        optimalities = getRoute.optimalities;
+        System.out.println("Updated optimalities after callbacks & completable futures: " + optimalities);
     }
 
     private static void setOptimalities(Object o) {
@@ -575,184 +585,184 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });*/
 
-    private static void getRoutes()
-    {
-        for (final String userID : userIdsToFindPolylines)
-        {
-            // Get database reference
-            FirebaseDatabase db = FirebaseDatabase.getInstance();
-            final DatabaseReference user = db.getReference().child("users").child(userID);
-            System.out.println("Got reference to the user when trying to make route request: " + user.toString());
-
-
-            // set origin
-            final DatabaseReference[] location = {user.child("location")};
-            System.out.println("Got reference to the user's location when trying to make route request: " + location[0].toString());
-            final String[] userLocation = new String[1];
-
-            location[0].addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    System.out.println("Location accessed from the database--trying to make request: " + dataSnapshot.getValue().toString());
-                    userLocation[0] = dataSnapshot.getValue().toString();
-                    System.out.println("User location from array right after being updated: " + userLocation[0]);
-
-                    DatabaseReference destination = user.child("destination");
-                    final String[] userDestination = new String[1];
-                    destination.addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            if (dataSnapshot.getValue().toString().equals("null")) routePath[0] = "Invalid: no destination";
-                            userDestination[0] = dataSnapshot.getValue().toString();
-                            System.out.println("User's destination after being retrieved from the database: " + userDestination[0]);
-
-                            DirectionsApiRequest routeRequest = DirectionsApi.newRequest(context);
-                            System.out.println("User location retrieved from the array: " + userLocation[0]);
-                            String[] locationLatLng = userLocation[0].split(", ");
-                            com.google.maps.model.LatLng userLocationCoord = new com.google.maps.model.LatLng(Double.parseDouble(locationLatLng[0]), Double.parseDouble(locationLatLng[1]));
-                            System.out.println("Route request's origin: " + userLocationCoord);
-                            routeRequest.origin(userLocationCoord);
-                            routeRequest.destination(userDestination[0]);
-                            System.out.println("Route request's destination: " + userDestination[0]);
-                            routeRequest.mode(TravelMode.WALKING);
-                            System.out.println("Route request after all qualities have been added: " + routeRequest.toString());
-
-                            routeRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
-                                @Override
-                                public void onResult(DirectionsResult result) {
-                                    EncodedPolyline userRoutePolyline = result.routes[0].overviewPolyline;
-                                    System.out.println("User's route polyline for uid " + userID + ": " + userRoutePolyline);
-                                    userPolylines.add(userRoutePolyline);
-                                    System.out.println("All user ids for which polylines have been found: " + userIdsToFindPolylines);
-                                    System.out.println("All polylines found: " + userPolylines);
-                                    routePoints.add(userRoutePolyline.decodePath());
-                                    System.out.println("Number of decoded polylines in routePoints: " + routePoints.size());
-                                    System.out.println("All items in routePoints: " + routePoints);
-
-                                }
-                                @Override
-                                public void onFailure(Throwable e) {
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-
-                        }
-                    });
-
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                }
-            });
-        }
-    }
-
-    private void findOptimalities() {
-        System.out.println("Finding optimalities");
-        System.out.println("RoutePoints size: " + routePoints.size());
-        for (int i = 1; i < routePoints.size(); i++)
-        {
-            List<com.google.maps.model.LatLng> userRoute = routePoints.get(0);
-            List<com.google.maps.model.LatLng> friendRoute = routePoints.get(i);
-            double userRouteDist = distance(userRoute.get(0).lat, userRoute.get(userRoute.size()-1).lat, userRoute.get(0).lng, userRoute.get(userRoute.size() -1).lng, 0, 0);
-            double friendRouteDist = distance(friendRoute.get(0).lat, friendRoute.get(friendRoute.size()-1).lat, friendRoute.get(0).lng, friendRoute.get(friendRoute.size()-1).lng, 0, 0);
-            int[] intersectionPts = findIntersection(userRoute, friendRoute);
-            System.out.println("User Route Distance: " + userRouteDist);
-            System.out.println("Friend Route Distance: " + friendRouteDist);
-            System.out.println("Intersection Points: " + intersectionPts);
-            double intersectionDist = distance(userRoute.get(intersectionPts[0]).lat, userRoute.get(intersectionPts[1]).lat,
-                                                userRoute.get(intersectionPts[0]).lng, userRoute.get(intersectionPts[1]).lng,
-                                                0, 0);
-            double optimality = intersectionDist/userRouteDist;
-            System.out.println("Optimality found: " + optimality);
-            double[] optimalityArr = {optimality, (double) i};
-            optimalities.add(optimalityArr);
-
-            DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
-            wayPointsRequest.origin(userRoute.get(intersectionPts[0]));
-            wayPointsRequest.destination(userRoute.get(intersectionPts[1]));
-            wayPointsRequest.mode(TravelMode.WALKING);
-            wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
-                @Override
-                public void onResult(DirectionsResult result) {
-                    List<com.google.maps.model.LatLng> points = result.routes[0].overviewPolyline.decodePath();
-                    System.out.println("Waypoints found: " + points);
-                    System.out.println("Number of waypoints found: " + points.size());
-                    ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded = new ArrayList<>();
-                    if (points.size() <= 23)
-                    {
-                        for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
-                        System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
-                    }
-                    else
-                    {
-                        System.out.println(points.size()/23.0);
-                        double factor = (double) (Math.round((double) points.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
-                        factor = (int) (Math.round(factor));
-                        System.out.println("Factor: " + factor);
-                        for (int i = 0; i < points.size(); i+=factor)
-                        {
-                            wayPtsToBeAdded.add(points.get(i));
-                        }
-                        System.out.println("Size of wayPtsToBeAdded when points size > 23: " + wayPtsToBeAdded.size());
-                        if (wayPtsToBeAdded.size() > 23)
-                        {
-                            int diff = wayPtsToBeAdded.size() - 23;
-                            wayPtsToBeAdded = new ArrayList<>();
-                            for (int i = 0; i < points.size() - diff; i++)
-                            {
-                                wayPtsToBeAdded.add(points.get(i));
-                            }
-                        }
-                        System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
-                    }
-
-                    wayPoints.add(wayPtsToBeAdded);
-                    System.out.println("Waypoints arraylist at this point: " + wayPoints);
-                    sortOptimalities();
-
-                }
-
-                @Override
-                public void onFailure(Throwable e) {
-
-                }
-            });
-
-        }
-    }
-
-    private void sortOptimalities() {
-        System.out.println("Sorting optimalities");
-        double maxOptimality = 0;
-        int index = 0;
-        while (index < optimalities.size())
-        {
-            System.out.println("Max optimality at this point: " + maxOptimality);
-            System.out.println("Optimality of current element: " + optimalities.get(index)[0]);
-            if (optimalities.get(index)[0] >= maxOptimality)
-            {
-                maxOptimality = optimalities.get(index)[0];
-                optimalities.add(0, optimalities.remove(index));
-            }
-            index++;
-        }
-
-        System.out.println("Sorted optimalities: " + optimalities);
-        System.out.println("Index of the most optimal friend: " + (int) optimalities.get(0)[1]);
-        System.out.println("All user ids to find polylines for: " + userIdsToFindPolylines);
-        System.out.println("All polylines found: " + userPolylines);
-        System.out.println("All routes found: " + routePoints);
-        System.out.println("All waypoint lists found: " + wayPoints);
-        System.out.println("Chosen user id: " + userIdsToFindPolylines.get((int) optimalities.get(0)[1]));
-        System.out.println("Chosen polyline: " + userPolylines.get((int) optimalities.get(0)[1]));
-        System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
-        System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
-    }
+//    private static void getRoutes()
+//    {
+//        for (final String userID : userIdsToFindPolylines)
+//        {
+//            // Get database reference
+//            FirebaseDatabase db = FirebaseDatabase.getInstance();
+//            final DatabaseReference user = db.getReference().child("users").child(userID);
+//            System.out.println("Got reference to the user when trying to make route request: " + user.toString());
+//
+//
+//            // set origin
+//            final DatabaseReference[] location = {user.child("location")};
+//            System.out.println("Got reference to the user's location when trying to make route request: " + location[0].toString());
+//            final String[] userLocation = new String[1];
+//
+//            location[0].addValueEventListener(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//                    System.out.println("Location accessed from the database--trying to make request: " + dataSnapshot.getValue().toString());
+//                    userLocation[0] = dataSnapshot.getValue().toString();
+//                    System.out.println("User location from array right after being updated: " + userLocation[0]);
+//
+//                    DatabaseReference destination = user.child("destination");
+//                    final String[] userDestination = new String[1];
+//                    destination.addValueEventListener(new ValueEventListener() {
+//                        @Override
+//                        public void onDataChange(DataSnapshot dataSnapshot) {
+//                            if (dataSnapshot.getValue().toString().equals("null")) routePath[0] = "Invalid: no destination";
+//                            userDestination[0] = dataSnapshot.getValue().toString();
+//                            System.out.println("User's destination after being retrieved from the database: " + userDestination[0]);
+//
+//                            DirectionsApiRequest routeRequest = DirectionsApi.newRequest(context);
+//                            System.out.println("User location retrieved from the array: " + userLocation[0]);
+//                            String[] locationLatLng = userLocation[0].split(", ");
+//                            com.google.maps.model.LatLng userLocationCoord = new com.google.maps.model.LatLng(Double.parseDouble(locationLatLng[0]), Double.parseDouble(locationLatLng[1]));
+//                            System.out.println("Route request's origin: " + userLocationCoord);
+//                            routeRequest.origin(userLocationCoord);
+//                            routeRequest.destination(userDestination[0]);
+//                            System.out.println("Route request's destination: " + userDestination[0]);
+//                            routeRequest.mode(TravelMode.WALKING);
+//                            System.out.println("Route request after all qualities have been added: " + routeRequest.toString());
+//
+//                            routeRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+//                                @Override
+//                                public void onResult(DirectionsResult result) {
+//                                    EncodedPolyline userRoutePolyline = result.routes[0].overviewPolyline;
+//                                    System.out.println("User's route polyline for uid " + userID + ": " + userRoutePolyline);
+//                                    userPolylines.add(userRoutePolyline);
+//                                    System.out.println("All user ids for which polylines have been found: " + userIdsToFindPolylines);
+//                                    System.out.println("All polylines found: " + userPolylines);
+//                                    routePoints.add(userRoutePolyline.decodePath());
+//                                    System.out.println("Number of decoded polylines in routePoints: " + routePoints.size());
+//                                    System.out.println("All items in routePoints: " + routePoints);
+//
+//                                }
+//                                @Override
+//                                public void onFailure(Throwable e) {
+//                                }
+//                            });
+//                        }
+//
+//                        @Override
+//                        public void onCancelled(DatabaseError databaseError) {
+//
+//                        }
+//                    });
+//
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//                }
+//            });
+//        }
+//    }
+//
+//    private void findOptimalities() {
+//        System.out.println("Finding optimalities");
+//        System.out.println("RoutePoints size: " + routePoints.size());
+//        for (int i = 1; i < routePoints.size(); i++)
+//        {
+//            List<com.google.maps.model.LatLng> userRoute = routePoints.get(0);
+//            List<com.google.maps.model.LatLng> friendRoute = routePoints.get(i);
+//            double userRouteDist = distance(userRoute.get(0).lat, userRoute.get(userRoute.size()-1).lat, userRoute.get(0).lng, userRoute.get(userRoute.size() -1).lng, 0, 0);
+//            double friendRouteDist = distance(friendRoute.get(0).lat, friendRoute.get(friendRoute.size()-1).lat, friendRoute.get(0).lng, friendRoute.get(friendRoute.size()-1).lng, 0, 0);
+//            int[] intersectionPts = findIntersection(userRoute, friendRoute);
+//            System.out.println("User Route Distance: " + userRouteDist);
+//            System.out.println("Friend Route Distance: " + friendRouteDist);
+//            System.out.println("Intersection Points: " + intersectionPts);
+//            double intersectionDist = distance(userRoute.get(intersectionPts[0]).lat, userRoute.get(intersectionPts[1]).lat,
+//                                                userRoute.get(intersectionPts[0]).lng, userRoute.get(intersectionPts[1]).lng,
+//                                                0, 0);
+//            double optimality = intersectionDist/userRouteDist;
+//            System.out.println("Optimality found: " + optimality);
+//            double[] optimalityArr = {optimality, (double) i};
+//            optimalities.add(optimalityArr);
+//
+//            DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
+//            wayPointsRequest.origin(userRoute.get(intersectionPts[0]));
+//            wayPointsRequest.destination(userRoute.get(intersectionPts[1]));
+//            wayPointsRequest.mode(TravelMode.WALKING);
+//            wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+//                @Override
+//                public void onResult(DirectionsResult result) {
+//                    List<com.google.maps.model.LatLng> points = result.routes[0].overviewPolyline.decodePath();
+//                    System.out.println("Waypoints found: " + points);
+//                    System.out.println("Number of waypoints found: " + points.size());
+//                    ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded = new ArrayList<>();
+//                    if (points.size() <= 23)
+//                    {
+//                        for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
+//                        System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
+//                    }
+//                    else
+//                    {
+//                        System.out.println(points.size()/23.0);
+//                        double factor = (double) (Math.round((double) points.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
+//                        factor = (int) (Math.round(factor));
+//                        System.out.println("Factor: " + factor);
+//                        for (int i = 0; i < points.size(); i+=factor)
+//                        {
+//                            wayPtsToBeAdded.add(points.get(i));
+//                        }
+//                        System.out.println("Size of wayPtsToBeAdded when points size > 23: " + wayPtsToBeAdded.size());
+//                        if (wayPtsToBeAdded.size() > 23)
+//                        {
+//                            int diff = wayPtsToBeAdded.size() - 23;
+//                            wayPtsToBeAdded = new ArrayList<>();
+//                            for (int i = 0; i < points.size() - diff; i++)
+//                            {
+//                                wayPtsToBeAdded.add(points.get(i));
+//                            }
+//                        }
+//                        System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
+//                    }
+//
+//                    wayPoints.add(wayPtsToBeAdded);
+//                    System.out.println("Waypoints arraylist at this point: " + wayPoints);
+//                    sortOptimalities();
+//
+//                }
+//
+//                @Override
+//                public void onFailure(Throwable e) {
+//
+//                }
+//            });
+//
+//        }
+//    }
+//
+//    private void sortOptimalities() {
+//        System.out.println("Sorting optimalities");
+//        double maxOptimality = 0;
+//        int index = 0;
+//        while (index < optimalities.size())
+//        {
+//            System.out.println("Max optimality at this point: " + maxOptimality);
+//            System.out.println("Optimality of current element: " + optimalities.get(index)[0]);
+//            if (optimalities.get(index)[0] >= maxOptimality)
+//            {
+//                maxOptimality = optimalities.get(index)[0];
+//                optimalities.add(0, optimalities.remove(index));
+//            }
+//            index++;
+//        }
+//
+//        System.out.println("Sorted optimalities: " + optimalities);
+//        System.out.println("Index of the most optimal friend: " + (int) optimalities.get(0)[1]);
+//        System.out.println("All user ids to find polylines for: " + userIdsToFindPolylines);
+//        System.out.println("All polylines found: " + userPolylines);
+//        System.out.println("All routes found: " + routePoints);
+//        System.out.println("All waypoint lists found: " + wayPoints);
+//        System.out.println("Chosen user id: " + userIdsToFindPolylines.get((int) optimalities.get(0)[1]));
+//        System.out.println("Chosen polyline: " + userPolylines.get((int) optimalities.get(0)[1]));
+//        System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
+//        System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
+//    }
 
 
     public static double distance(double lat1, double lat2, double lon1,

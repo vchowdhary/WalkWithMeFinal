@@ -452,4 +452,32 @@ public class RouteGetter {
         System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
         System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
     }
+
+    public static void sortOptimalities() {
+        System.out.println("Sorting optimalities");
+        double maxOptimality = 0;
+        int index = 0;
+        while (index < optimalities.size())
+        {
+            System.out.println("Max optimality at this point: " + maxOptimality);
+            System.out.println("Optimality of current element: " + optimalities.get(index)[0]);
+            if (optimalities.get(index)[0] >= maxOptimality)
+            {
+                maxOptimality = optimalities.get(index)[0];
+                optimalities.add(0, optimalities.remove(index));
+            }
+            index++;
+        }
+
+        System.out.println("Sorted optimalities: " + optimalities);
+        System.out.println("Index of the most optimal friend: " + (int) optimalities.get(0)[1]);
+        System.out.println("All user ids to find polylines for: " + uids);
+        System.out.println("All polylines found: " + userPolylines);
+        System.out.println("All routes found: " + routePoints);
+        System.out.println("All waypoint lists found: " + wayPoints);
+        System.out.println("Chosen user id: " + uids.get((int) optimalities.get(0)[1]));
+        System.out.println("Chosen polyline: " + userPolylines.get((int) optimalities.get(0)[1]));
+        System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
+        System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
+    }
 }
