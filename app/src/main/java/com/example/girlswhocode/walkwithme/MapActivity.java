@@ -64,6 +64,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -178,9 +179,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 System.out.println(userIdsToFindPolylines);
 
                 getRoute = new RouteGetter(userIdsToFindPolylines);
-                CompletableFuture<Void> getOptimalities = CompletableFuture.supplyAsync(RouteGetter::findOptimalities).thenAccept(RouteGetter::sortOptimalities).thenAccept(MapActivity::setOptimalities);
+                CompletableFuture getRoutes = CompletableFuture.supplyAsync(() -> RouteGetter.findRoutes());
+                CompletableFuture getOptimalities = getRoutes.thenApplyAsync(RouteGetter::findOptimalities).thenAcceptAsync(RouteGetter::sortOptimalities).thenAccept(MapActivity::setOptimalities);
             }
         });
+    }
+
+    private static void setOptimalities(Object o) {
+        optimalities = (ArrayList<double[]>) o;
+        System.out.println("Updated optimalities after callbacks & completable futures: " + optimalities);
+    }
+
+    private static void setOptimalities(ArrayList<double[]> doubles) {
+        optimalities = getRoute.optimalities;
+        System.out.println("Updated optimalities: " + optimalities);
     }
 
     private static void setOptimalities(Void aVoid) {
