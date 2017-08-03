@@ -2,6 +2,7 @@ package com.example.girlswhocode.walkwithme;
 
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,6 +13,8 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -38,6 +41,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.Actions;
@@ -58,12 +64,15 @@ import com.google.maps.model.TravelMode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
@@ -179,7 +188,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 System.out.println(userIdsToFindPolylines);
 
                 getRoute = new RouteGetter(userIdsToFindPolylines);
+
+
                 CompletableFuture routes = CompletableFuture.supplyAsync(() -> RouteGetter.findRoutes());
+                /*routes.thenAccept(new Consumer() {
+                    @Override
+                    public void accept(Object o) {
+                        System.out.println("CompleteableFuture routes is done. Printing optimalities");
+                        setOptimalities();
+                    }
+                });*/
+
               //  CompletableFuture getRoutes = CompletableFuture.supplyAsync(() -> RouteGetter.findRoutes()).thenRun(() -> System.out.println(getRoutes.isDone() + ": " + RouteGetter.routePoints));
                // thenRun(() -> System.out.println("Route Points from GetRoute: " + RouteGetter.routePoints));
 //                CompletableFuture optimalities = getRoutes.thenComposeAsync(RouteGetter::findOptimalities).thenRunAsync(RouteGetter::sortOptimalities).thenRun(MapActivity::setOptimalities);
@@ -190,24 +209,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
 
-    private static void setOptimalities() {
+    public static void setOptimalities() {
         optimalities = getRoute.optimalities;
         System.out.println("Updated optimalities after callbacks & completable futures: " + optimalities);
-    }
-
-    private static void setOptimalities(Object o) {
-        optimalities = (ArrayList<double[]>) o;
-        System.out.println("Updated optimalities after callbacks & completable futures: " + optimalities);
-    }
-
-    private static void setOptimalities(ArrayList<double[]> doubles) {
-        optimalities = getRoute.optimalities;
-        System.out.println("Updated optimalities: " + optimalities);
-    }
-
-    private static void setOptimalities(Void aVoid) {
-        optimalities = getRoute.optimalities;
-        System.out.println("Updated optimalities: " + optimalities);
     }
 
     private int[] findIntersection(List<com.google.maps.model.LatLng> routePoints, List<com.google.maps.model.LatLng> usrRtPts) {
@@ -877,6 +881,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 System.out.println("Switching to the panic activity...");
                 Intent switchPanic = new Intent(MapActivity.this, PanicActivity.class);
                 startActivity(switchPanic);
+                return true;
+
+            case R.id.settings_action:
+                startActivity(new Intent(MapActivity.this, SettingsActivity.class));
                 return true;
 
             default:

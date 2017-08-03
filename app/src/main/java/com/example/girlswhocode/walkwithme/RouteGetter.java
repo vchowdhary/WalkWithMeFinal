@@ -87,6 +87,7 @@ public class RouteGetter {
                                     routePoints.add(userRoutePolyline.decodePath());
                                     System.out.println("Number of decoded polylines in routePoints: " + routePoints.size());
                                     System.out.println("All items in routePoints: " + routePoints);
+                                    optimalities = findOptimalities();
 
                                 }
                                 @Override
@@ -174,6 +175,7 @@ public class RouteGetter {
 
                     wayPoints.add(wayPtsToBeAdded);
                     System.out.println("Waypoints arraylist at this point: " + wayPoints);
+                    optimalities = sortOptimalities();
 
                 }
 
@@ -184,7 +186,7 @@ public class RouteGetter {
             });
 
         }
-        return null;
+        return optimalities;
     }
 
 //    public static ArrayList<double[]> sortOptimalities() {
@@ -424,7 +426,7 @@ public class RouteGetter {
         return optimalities;
     }
 
-    public static void sortOptimalities(Object o) {
+    public static ArrayList<double[]> sortOptimalities(Object o) {
         optimalities = (ArrayList<double[]>) o;
         System.out.println("Sorting optimalities");
         double maxOptimality = 0;
@@ -451,9 +453,11 @@ public class RouteGetter {
         System.out.println("Chosen polyline: " + userPolylines.get((int) optimalities.get(0)[1]));
         System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
         System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
+        MapActivity.setOptimalities();
+        return optimalities;
     }
 
-    public static void sortOptimalities() {
+    public static ArrayList<double[]> sortOptimalities() {
         System.out.println("Sorting optimalities");
         double maxOptimality = 0;
         int index = 0;
@@ -479,5 +483,7 @@ public class RouteGetter {
         System.out.println("Chosen polyline: " + userPolylines.get((int) optimalities.get(0)[1]));
         System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
         System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
+        MapActivity.setOptimalities();
+        return optimalities;
     }
 }
