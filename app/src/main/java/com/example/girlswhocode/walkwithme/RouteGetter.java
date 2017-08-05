@@ -33,11 +33,20 @@ public class RouteGetter {
 
     public RouteGetter(ArrayList<String> userIDs)
     {
+        System.out.println("Created new RouteGetter object.");
+        uids = new ArrayList<>();
         for (String userID : userIDs) uids.add(userID);
+        System.out.println("All user ids: " + uids);
+        userPolylines = new ArrayList<>();
+        routePoints = new ArrayList<>();
+        wayPoints = new ArrayList<>();
+        optimalities = new ArrayList<>();
+        routePath = new String[1];
     }
 
     public static ArrayList<List<LatLng>> findRoutes()
     {
+        System.out.println("Finding routes");
         for (final String userID : uids)
         {
             FirebaseDatabase db = FirebaseDatabase.getInstance();
@@ -84,10 +93,11 @@ public class RouteGetter {
                                     System.out.println("User's route polyline for uid " + userID + ": " + userRoutePolyline);
                                     userPolylines.add(userRoutePolyline);
                                     System.out.println("All polylines found: " + userPolylines);
-                                    routePoints.add(userRoutePolyline.decodePath());
+                                    if (!routePoints.contains(userRoutePolyline.decodePath())) routePoints.add(userRoutePolyline.decodePath());
                                     System.out.println("Number of decoded polylines in routePoints: " + routePoints.size());
                                     System.out.println("All items in routePoints: " + routePoints);
                                     optimalities = findOptimalities();
+
 
                                 }
                                 @Override
@@ -133,59 +143,61 @@ public class RouteGetter {
             System.out.println("Optimality found: " + optimality);
             double[] optimalityArr = {optimality, (double) i};
             optimalities.add(optimalityArr);
+            System.out.println("Opimalities ArrayList at this point: " + optimalities);
 
-            DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
-            wayPointsRequest.origin(userRoute.get(intersectionPts[0]));
-            wayPointsRequest.destination(userRoute.get(intersectionPts[1]));
-            wayPointsRequest.mode(TravelMode.WALKING);
-            wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
-                @Override
-                public void onResult(DirectionsResult result) {
-                    List<com.google.maps.model.LatLng> points = result.routes[0].overviewPolyline.decodePath();
-                    System.out.println("Waypoints found: " + points);
-                    System.out.println("Number of waypoints found: " + points.size());
-                    ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded = new ArrayList<>();
-                    if (points.size() <= 23)
-                    {
-                        for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
-                        System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
-                    }
-                    else
-                    {
-                        System.out.println(points.size()/23.0);
-                        double factor = (double) (Math.round((double) points.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
-                        factor = (int) (Math.round(factor));
-                        System.out.println("Factor: " + factor);
-                        for (int i = 0; i < points.size(); i+=factor)
-                        {
-                            wayPtsToBeAdded.add(points.get(i));
-                        }
-                        System.out.println("Size of wayPtsToBeAdded when points size > 23: " + wayPtsToBeAdded.size());
-                        if (wayPtsToBeAdded.size() > 23)
-                        {
-                            int diff = wayPtsToBeAdded.size() - 23;
-                            wayPtsToBeAdded = new ArrayList<>();
-                            for (int i = 0; i < points.size() - diff; i++)
-                            {
-                                wayPtsToBeAdded.add(points.get(i));
-                            }
-                        }
-                        System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
-                    }
-
-                    wayPoints.add(wayPtsToBeAdded);
-                    System.out.println("Waypoints arraylist at this point: " + wayPoints);
-                    optimalities = sortOptimalities();
-
-                }
-
-                @Override
-                public void onFailure(Throwable e) {
-
-                }
-            });
+//            DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
+//            wayPointsRequest.origin(userRoute.get(intersectionPts[0]));
+//            wayPointsRequest.destination(userRoute.get(intersectionPts[1]));
+//            wayPointsRequest.mode(TravelMode.WALKING);
+//            wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+//                @Override
+//                public void onResult(DirectionsResult result) {
+//                    List<com.google.maps.model.LatLng> points = result.routes[0].overviewPolyline.decodePath();
+//                    System.out.println("Waypoints found: " + points);
+//                    System.out.println("Number of waypoints found: " + points.size());
+//                    ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded = new ArrayList<>();
+//                    if (points.size() <= 23)
+//                    {
+//                        for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
+//                        System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
+//                    }
+//                    else
+//                    {
+//                        System.out.println(points.size()/23.0);
+//                        double factor = (double) (Math.round((double) points.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
+//                        factor = (int) (Math.round(factor));
+//                        System.out.println("Factor: " + factor);
+//                        for (int i = 0; i < points.size(); i+=factor)
+//                        {
+//                            wayPtsToBeAdded.add(points.get(i));
+//                        }
+//                        System.out.println("Size of wayPtsToBeAdded when points size > 23: " + wayPtsToBeAdded.size());
+//                        if (wayPtsToBeAdded.size() > 23)
+//                        {
+//                            int diff = wayPtsToBeAdded.size() - 23;
+//                            wayPtsToBeAdded = new ArrayList<>();
+//                            for (int i = 0; i < points.size() - diff; i++)
+//                            {
+//                                wayPtsToBeAdded.add(points.get(i));
+//                            }
+//                        }
+//                        System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
+//                    }
+//
+//                    wayPoints.add(wayPtsToBeAdded);
+//                    System.out.println("Waypoints arraylist at this point: " + wayPoints);
+//                    optimalities = sortOptimalities();
+//
+//                }
+//
+//                @Override
+//                public void onFailure(Throwable e) {
+//
+//                }
+//            });
 
         }
+        sortOptimalities();
         return optimalities;
     }
 
@@ -225,24 +237,24 @@ public class RouteGetter {
         int j = 0;
         int startIntersectionIndex = -1;
         System.out.println("Finding start intersection");
-        while (i < routePoints.size() || j < usrRtPts.size())
+        while (i < routePoints.size() && j < usrRtPts.size())
         {
             com.google.android.gms.maps.model.LatLng routePointLatLng = new com.google.android.gms.maps.model.LatLng(routePoints.get(i).lat, routePoints.get(i).lng);
             com.google.android.gms.maps.model.LatLng usrRtPtLatLng = new com.google.android.gms.maps.model.LatLng(usrRtPts.get(j).lat, usrRtPts.get(j).lng);
             double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
-            //System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+          //  System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
             double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
-            //System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+          //  System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
             if (distance > 10 )
             {
                 if (bearing < 0)
                 {
-                    //System.out.println("farther behind; need to move up");
+                   // System.out.println("farther behind; need to move up");
                     j++;
                 }
                 else
                 {
-                    //System.out.println("further ahead, need the other route to move up");
+                   // System.out.println("further ahead, need the other route to move up");
                     i++;
                 }
             }
@@ -260,24 +272,24 @@ public class RouteGetter {
         int m = usrRtPts.size() - 1;
         int endIntersectionIndex = -1;
         System.out.println("Finding end intersection");
-        while (l > 0 || m > 0)
+        while (l > 0 && m > 0)
         {
             com.google.android.gms.maps.model.LatLng routePointLatLng = new com.google.android.gms.maps.model.LatLng(routePoints.get(l).lat, routePoints.get(l).lng);
             com.google.android.gms.maps.model.LatLng usrRtPtLatLng = new com.google.android.gms.maps.model.LatLng(usrRtPts.get(m).lat, usrRtPts.get(m).lng);
             double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
-            //System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+//            System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
             double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
-            //System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+//            System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
             if (distance > 10)
             {
                 if(bearing < 0)
                 {
-                    //System.out.println("further behind; need to move up");
+//                    System.out.println("further behind; need to move up");
                     m--;
                 }
                 else
                 {
-                    //System.out.println("further ahead, need the other route to move up");
+//                    System.out.println("further ahead, need the other route to move up");
                     l--;
                 }
             }
@@ -290,7 +302,7 @@ public class RouteGetter {
         System.out.println("End Intersection Index: " + endIntersectionIndex);
 
         int[] intersectionPts = {startIntersectionIndex, endIntersectionIndex};
-        System.out.println("intersection pts: " + intersectionPts);
+//        System.out.println("intersection pts: " + intersectionPts);
         return intersectionPts;
     }
 
@@ -355,12 +367,11 @@ public class RouteGetter {
     public static Object findOptimalities(Object o) {
         System.out.println("Finding optimalities");
         System.out.println("RoutePoints size: " + routePoints.size());
-        for (int i = 1; i < routePoints.size(); i++)
-        {
+        for (int i = 1; i < routePoints.size(); i++) {
             List<com.google.maps.model.LatLng> userRoute = routePoints.get(0);
             List<com.google.maps.model.LatLng> friendRoute = routePoints.get(i);
-            double userRouteDist = distance(userRoute.get(0).lat, userRoute.get(userRoute.size()-1).lat, userRoute.get(0).lng, userRoute.get(userRoute.size() -1).lng, 0, 0);
-            double friendRouteDist = distance(friendRoute.get(0).lat, friendRoute.get(friendRoute.size()-1).lat, friendRoute.get(0).lng, friendRoute.get(friendRoute.size()-1).lng, 0, 0);
+            double userRouteDist = distance(userRoute.get(0).lat, userRoute.get(userRoute.size() - 1).lat, userRoute.get(0).lng, userRoute.get(userRoute.size() - 1).lng, 0, 0);
+            double friendRouteDist = distance(friendRoute.get(0).lat, friendRoute.get(friendRoute.size() - 1).lat, friendRoute.get(0).lng, friendRoute.get(friendRoute.size() - 1).lng, 0, 0);
             int[] intersectionPts = findIntersection(userRoute, friendRoute);
             System.out.println("User Route Distance: " + userRouteDist);
             System.out.println("Friend Route Distance: " + friendRouteDist);
@@ -368,94 +379,67 @@ public class RouteGetter {
             double intersectionDist = distance(userRoute.get(intersectionPts[0]).lat, userRoute.get(intersectionPts[1]).lat,
                     userRoute.get(intersectionPts[0]).lng, userRoute.get(intersectionPts[1]).lng,
                     0, 0);
-            double optimality = intersectionDist/userRouteDist;
+            double optimality = intersectionDist / userRouteDist;
             System.out.println("Optimality found: " + optimality);
             double[] optimalityArr = {optimality, (double) i};
             optimalities.add(optimalityArr);
-            System.out.println("Optimalities Array at this point: "+optimalities);
-            DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
-            wayPointsRequest.origin(userRoute.get(intersectionPts[0]));
-            wayPointsRequest.destination(userRoute.get(intersectionPts[1]));
-            wayPointsRequest.mode(TravelMode.WALKING);
-            wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
-                @Override
-                public void onResult(DirectionsResult result) {
-                    List<com.google.maps.model.LatLng> points = result.routes[0].overviewPolyline.decodePath();
-                    System.out.println("Waypoints found: " + points);
-                    System.out.println("Number of waypoints found: " + points.size());
-                    ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded = new ArrayList<>();
-                    if (points.size() <= 23)
-                    {
-                        for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
-                        System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
-                    }
-                    else
-                    {
-                        System.out.println(points.size()/23.0);
-                        double factor = (double) (Math.round((double) points.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
-                        factor = (int) (Math.round(factor));
-                        System.out.println("Factor: " + factor);
-                        for (int i = 0; i < points.size(); i+=factor)
-                        {
-                            wayPtsToBeAdded.add(points.get(i));
-                        }
-                        System.out.println("Size of wayPtsToBeAdded when points size > 23: " + wayPtsToBeAdded.size());
-                        if (wayPtsToBeAdded.size() > 23)
-                        {
-                            int diff = wayPtsToBeAdded.size() - 23;
-                            wayPtsToBeAdded = new ArrayList<>();
-                            for (int i = 0; i < points.size() - diff; i++)
-                            {
-                                wayPtsToBeAdded.add(points.get(i));
-                            }
-                        }
-                        System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
-                    }
-
-                    wayPoints.add(wayPtsToBeAdded);
-                    System.out.println("Waypoints arraylist at this point: " + wayPoints);
-                }
-
-                @Override
-                public void onFailure(Throwable e) {
-
-                }
-            });
-
+            System.out.println("Optimalities Array at this point: " + optimalities);
+            return optimalities;
         }
         return optimalities;
     }
 
-    public static ArrayList<double[]> sortOptimalities(Object o) {
-        optimalities = (ArrayList<double[]>) o;
-        System.out.println("Sorting optimalities");
-        double maxOptimality = 0;
-        int index = 0;
-        while (index < optimalities.size())
-        {
-            System.out.println("Max optimality at this point: " + maxOptimality);
-            System.out.println("Optimality of current element: " + optimalities.get(index)[0]);
-            if (optimalities.get(index)[0] >= maxOptimality)
-            {
-                maxOptimality = optimalities.get(index)[0];
-                optimalities.add(0, optimalities.remove(index));
-            }
-            index++;
-        }
+//        DirectionsApiRequest wayPointsRequest = DirectionsApi.newRequest(context);
+//        wayPointsRequest.origin(userRoute.get(intersectionPts[0]));
+//        wayPointsRequest.destination(userRoute.get(intersectionPts[1]));
+//        wayPointsRequest.mode(TravelMode.WALKING);
+//        wayPointsRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+//            @Override
+//            public void onResult(DirectionsResult result) {
+//                List<com.google.maps.model.LatLng> points = result.routes[0].overviewPolyline.decodePath();
+//                System.out.println("Waypoints found: " + points);
+//                System.out.println("Number of waypoints found: " + points.size());
+//                ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded = new ArrayList<>();
+//                if (points.size() <= 23)
+//                {
+//                    for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
+//                    System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
+//                }
+//                else
+//                {
+//                    System.out.println(points.size()/23.0);
+//                    double factor = (double) (Math.round((double) points.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
+//                    factor = (int) (Math.round(factor));
+//                    System.out.println("Factor: " + factor);
+//                    for (int i = 0; i < points.size(); i+=factor)
+//                    {
+//                        wayPtsToBeAdded.add(points.get(i));
+//                    }
+//                    System.out.println("Size of wayPtsToBeAdded when points size > 23: " + wayPtsToBeAdded.size());
+//                    if (wayPtsToBeAdded.size() > 23)
+//                    {
+//                        int diff = wayPtsToBeAdded.size() - 23;
+//                        wayPtsToBeAdded = new ArrayList<>();
+//                        for (int i = 0; i < points.size() - diff; i++)
+//                        {
+//                            wayPtsToBeAdded.add(points.get(i));
+//                        }
+//                    }
+//                    System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
+//                }
+//
+//                wayPoints.add(wayPtsToBeAdded);
+//                System.out.println("Waypoints arraylist at this point: " + wayPoints);
+//            }
+//
+//            @Override
+//            public void onFailure(Throwable e) {
+//
+//            }
+//        });
+//
+//    }
 
-        System.out.println("Sorted optimalities: " + optimalities);
-        System.out.println("Index of the most optimal friend: " + (int) optimalities.get(0)[1]);
-        System.out.println("All user ids to find polylines for: " + uids);
-        System.out.println("All polylines found: " + userPolylines);
-        System.out.println("All routes found: " + routePoints);
-        System.out.println("All waypoint lists found: " + wayPoints);
-        System.out.println("Chosen user id: " + uids.get((int) optimalities.get(0)[1]));
-        System.out.println("Chosen polyline: " + userPolylines.get((int) optimalities.get(0)[1]));
-        System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
-        System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
-        MapActivity.setOptimalities();
-        return optimalities;
-    }
 
     public static ArrayList<double[]> sortOptimalities() {
         System.out.println("Sorting optimalities");
@@ -473,17 +457,19 @@ public class RouteGetter {
             index++;
         }
 
-        System.out.println("Sorted optimalities: " + optimalities);
+        for (double[] optim : optimalities)
+        {
+            System.out.println("Optimality: " + optim[0] + "/ index in routePoints: " + optim[1]);
+        }
         System.out.println("Index of the most optimal friend: " + (int) optimalities.get(0)[1]);
         System.out.println("All user ids to find polylines for: " + uids);
         System.out.println("All polylines found: " + userPolylines);
         System.out.println("All routes found: " + routePoints);
-        System.out.println("All waypoint lists found: " + wayPoints);
         System.out.println("Chosen user id: " + uids.get((int) optimalities.get(0)[1]));
         System.out.println("Chosen polyline: " + userPolylines.get((int) optimalities.get(0)[1]));
         System.out.println("Chosen route: " + routePoints.get((int) optimalities.get(0)[1]));
-        System.out.println("Chosen waypoint list: " + routePoints.get((int) optimalities.get(0)[1]-1));
         MapActivity.setOptimalities();
         return optimalities;
     }
 }
+
