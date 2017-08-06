@@ -2,7 +2,6 @@ package com.example.girlswhocode.walkwithme;
 
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -11,10 +10,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -41,9 +39,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.Actions;
@@ -62,18 +57,14 @@ import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.EncodedPolyline;
 import com.google.maps.model.TravelMode;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static com.google.android.gms.location.LocationServices.FusedLocationApi;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -83,14 +74,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
 
-    static GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
-    static String[] routePath = {""};
-    static ArrayList<String> userIdsToFindPolylines = new ArrayList<>();
-    static ArrayList<EncodedPolyline> userPolylines = new ArrayList<>();
-    static ArrayList<List<com.google.maps.model.LatLng>> routePoints = new ArrayList<>();
-    ArrayList<List<com.google.maps.model.LatLng>> wayPoints = new ArrayList<>();
-    static ArrayList<double[]> optimalities = new ArrayList<>();
-    static RouteGetter getRoute;
+     GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyBORcg3FJS35RW4G8bCddA-jcGyQc7M6Vk");
+     String[] routePath = {""};
+     ArrayList<String> userIdsToFindPolylines = new ArrayList<>();
+     ArrayList<EncodedPolyline> userPolylines = new ArrayList<>();
+     ArrayList<List<com.google.maps.model.LatLng>> routePoints = new ArrayList<>();
+     ArrayList<ArrayList<com.google.maps.model.LatLng>> wayPoints = new ArrayList<>();
+     ArrayList<double[]> optimalities = new ArrayList<>();
+     RouteGetter getRoute;
 
     ArrayList<String> uids = new ArrayList<String>();
     int counter;
@@ -107,8 +98,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private BroadcastReceiver mMessageReceiver;
     BlockingQueue<Runnable> workQueue = new PriorityBlockingQueue<>();
     Executor executor = new ThreadPoolExecutor(100, 500, (long) 10000, TimeUnit.MILLISECONDS, workQueue);
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -186,19 +175,344 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                 System.out.println("Getting the user's route polyline");
                 System.out.println(userIdsToFindPolylines);
-                getRoute = new RouteGetter(userIdsToFindPolylines);
-                getRoute.findRoutes();
+                for (String userID : userIdsToFindPolylines)
+                {
+                    findRoutes(userID);
+                }
+            }
+        });
+    }
+
+    public ArrayList<List<com.google.maps.model.LatLng>> findRoutes(String userID)
+    {
+        System.out.println("USER ID: " + userID);
+        FirebaseDatabase db = FirebaseDatabase.getInstance();
+        final DatabaseReference user = db.getReference().child("users").child(userID);
+        System.out.println("Got reference to the user when trying to make route request: " + user.toString());
+
+
+        // set origin
+        final DatabaseReference[] location = {user.child("location")};
+        System.out.println("Got reference to the user's location when trying to make route request: " + "User id: " + userID + "/" + location[0].toString());
+        final String[] userLocation = new String[1];
+
+        location[0].addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                System.out.println("Location accessed from the database--trying to make request: " + "User id: " + userID + "/" + dataSnapshot.getValue().toString());
+                userLocation[0] = dataSnapshot.getValue().toString();
+                System.out.println("User location from array right after being updated: " + "User id: " + userID + "/" + userLocation[0]);
+
+                DatabaseReference destination = user.child("destination");
+                final String[] userDestination = new String[1];
+                destination.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.getValue().toString().equals("null")) routePath[0] = "Invalid: no destination";
+                        userDestination[0] = dataSnapshot.getValue().toString();
+                        System.out.println("User's destination after being retrieved from the database: " + "User id: " + userID + "/" + userDestination[0]);
+
+                        DirectionsApiRequest routeRequest = DirectionsApi.newRequest(context);
+                        System.out.println("User location retrieved from the array: " + "User id: " + userID + "/" + userLocation[0]);
+                        String[] locationLatLng = userLocation[0].split(", ");
+                        com.google.maps.model.LatLng userLocationCoord = new com.google.maps.model.LatLng(Double.parseDouble(locationLatLng[0]), Double.parseDouble(locationLatLng[1]));
+                        System.out.println("Route request's origin: " + "User id: " + userID + "/" + userLocationCoord);
+                        routeRequest.origin(userLocationCoord);
+                        routeRequest.destination(userDestination[0]);
+                        System.out.println("Route request's destination: " + userDestination[0]);
+                        routeRequest.mode(TravelMode.WALKING);
+                        System.out.println("Route request after all qualities have been added: " + "User id: " + userID + "/" + routeRequest.toString());
+
+                        routeRequest.setCallback(new PendingResult.Callback<DirectionsResult>() {
+                            @Override
+                            public void onResult(DirectionsResult result) {
+                                EncodedPolyline userRoutePolyline = result.routes[0].overviewPolyline;
+                                System.out.println("User's route polyline for uid " + userID + ": " + userRoutePolyline);
+                                userPolylines.add(userRoutePolyline);
+                                System.out.println("All polylines found: " + userPolylines);
+                                if (!routePoints.contains(userRoutePolyline.decodePath())) routePoints.add(userRoutePolyline.decodePath());
+                                System.out.println("Number of decoded polylines in routePoints: " + routePoints.size());
+                                System.out.println("All items in routePoints: " + routePoints);
+                                optimalities = findOptimalities();
+
+
+                            }
+                            @Override
+                            public void onFailure(Throwable e) {
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+            }
+        });
+        return routePoints;
+    }
+
+    public ArrayList<double[]> findOptimalities()
+    {
+        System.out.println("Finding optimalities");
+        System.out.println("RoutePoints size: " + routePoints.size());
+        for (int i = 1; i < routePoints.size(); i++)
+        {
+            List<com.google.maps.model.LatLng> userRoute = routePoints.get(0);
+            List<com.google.maps.model.LatLng> friendRoute = routePoints.get(i);
+            double userRouteDist = distance(userRoute.get(0).lat, userRoute.get(userRoute.size()-1).lat, userRoute.get(0).lng, userRoute.get(userRoute.size() -1).lng, 0, 0);
+            double friendRouteDist = distance(friendRoute.get(0).lat, friendRoute.get(friendRoute.size()-1).lat, friendRoute.get(0).lng, friendRoute.get(friendRoute.size()-1).lng, 0, 0);
+            int[] intersectionPts = findIntersection(userRoute, friendRoute);
+            System.out.println("User Route Distance: " + userRouteDist);
+            System.out.println("Friend Route Distance: " + friendRouteDist);
+            System.out.println("Intersection Points: " + intersectionPts);
+            double intersectionDist = distance(userRoute.get(intersectionPts[0]).lat, userRoute.get(intersectionPts[1]).lat,
+                    userRoute.get(intersectionPts[0]).lng, userRoute.get(intersectionPts[1]).lng,
+                    0, 0);
+            double optimality = intersectionDist/userRouteDist;
+            System.out.println("Optimality found: " + optimality);
+            double[] optimalityArr = {optimality, (double) i};
+            optimalities.add(optimalityArr);
+            System.out.println("Opimalities ArrayList at this point: " + optimalities);
+        }
+        sortOptimalities();
+        return optimalities;
+    }
+
+    public int[] findIntersection(List<com.google.maps.model.LatLng> routePoints, List<com.google.maps.model.LatLng> usrRtPts) {
+        System.out.println("Finding intersection points");
+        int i = 0;
+        int j = 0;
+        int startIntersectionIndex = -1;
+        System.out.println("Finding start intersection");
+        while (i < routePoints.size() && j < usrRtPts.size())
+        {
+            com.google.android.gms.maps.model.LatLng routePointLatLng = new com.google.android.gms.maps.model.LatLng(routePoints.get(i).lat, routePoints.get(i).lng);
+            com.google.android.gms.maps.model.LatLng usrRtPtLatLng = new com.google.android.gms.maps.model.LatLng(usrRtPts.get(j).lat, usrRtPts.get(j).lng);
+            double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
+            //  System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+            double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
+            //  System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+            if (distance > 10 )
+            {
+                if (bearing < 0)
+                {
+                    // System.out.println("farther behind; need to move up");
+                    j++;
+                }
+                else
+                {
+                    // System.out.println("further ahead, need the other route to move up");
+                    i++;
+                }
+            }
+            else
+            {
+                startIntersectionIndex = i;
+                break;
+            }
+        }
+        System.out.println("Start Intersection Index: " + startIntersectionIndex);
+
+        System.out.println("route points size: " + routePoints.size());
+        System.out.println("usr rt pts size: " + usrRtPts.size());
+        int l = routePoints.size() - 1;
+        int m = usrRtPts.size() - 1;
+        int endIntersectionIndex = -1;
+        System.out.println("Finding end intersection");
+        while (l > 0 && m > 0)
+        {
+            com.google.android.gms.maps.model.LatLng routePointLatLng = new com.google.android.gms.maps.model.LatLng(routePoints.get(l).lat, routePoints.get(l).lng);
+            com.google.android.gms.maps.model.LatLng usrRtPtLatLng = new com.google.android.gms.maps.model.LatLng(usrRtPts.get(m).lat, usrRtPts.get(m).lng);
+            double distance = distance(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude, 0, 0);
+//            System.out.println("distance between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + distance);
+            double bearing = findBearing(routePointLatLng.latitude, usrRtPtLatLng.latitude, routePointLatLng.longitude, usrRtPtLatLng.longitude);
+//            System.out.println("bearing between " + routePointLatLng + " and " + usrRtPtLatLng + ": " + bearing);
+            if (distance > 10)
+            {
+                if(bearing < 0)
+                {
+//                    System.out.println("further behind; need to move up");
+                    m--;
+                }
+                else
+                {
+//                    System.out.println("further ahead, need the other route to move up");
+                    l--;
+                }
+            }
+            else
+            {
+                endIntersectionIndex = l;
+                break;
+            }
+        }
+        System.out.println("End Intersection Index: " + endIntersectionIndex);
+
+        int[] intersectionPts = {startIntersectionIndex, endIntersectionIndex};
+//        System.out.println("intersection pts: " + intersectionPts);
+        return intersectionPts;
+    }
+
+    private double distance(double lat1, double lat2, double lon1,
+                                   double lon2, double el1, double el2) {
+
+        final int R = 6371; // Radius of the earth
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c * 1000; // convert to meters
+
+        double height = el1 - el2;
+
+        distance = Math.pow(distance, 2) + Math.pow(height, 2);
+        return Math.sqrt(distance);
+    }
+
+    private double findBearing(double lat1, double lat2, double lon1,
+                                      double lon2)
+    {
+        double y = Math.sin(lon2-lon1)*Math.cos(lat2);
+        double x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(lon2-lon1);
+        return Math.atan2(y, x)*180/Math.PI;
+    }
+
+    public ArrayList<double[]> sortOptimalities() {
+        System.out.println("Sorting optimalities");
+        double maxOptimality = 0;
+        int index = 0;
+        while (index < optimalities.size())
+        {
+            System.out.println("Max optimality at this point: " + maxOptimality);
+            System.out.println("Optimality of current element: " + optimalities.get(index)[0]);
+            if (optimalities.get(index)[0] >= maxOptimality)
+            {
+                maxOptimality = optimalities.get(index)[0];
+                optimalities.add(0, optimalities.remove(index));
+            }
+            index++;
+        }
+
+        for (double[] optim : optimalities)
+        {
+            System.out.println("Optimality: " + optim[0] + "/ index in routePoints: " + optim[1]);
+        }
+        System.out.println("Index of the most optimal friend: " + (int) optimalities.get(0)[1]);
+        System.out.println("All user ids to find polylines for: " + uids);
+        System.out.println("All polylines found: " + userPolylines);
+        System.out.println("All routes found: " + routePoints);
+        int optimIndex = (int) optimalities.get(0)[1];
+        System.out.println("Chosen user id: " + uids.get(optimIndex-1));
+        System.out.println("Chosen polyline: " + userPolylines.get(optimIndex));
+        System.out.println("Chosen route: " + routePoints.get(optimIndex));
+        setOptimalities();
+
+        return optimalities;
+    }
+
+    public void setOptimalities() {
+        int friendIndex = (int) optimalities.get(0)[1];
+        System.out.println("Updated optimalities after callbacks & completable futures: " + optimalities);
+        System.out.println("Updated route points: " + routePoints);
+        System.out.println("user's route points: " + routePoints.get(0));
+        int[] intersections = findIntersection(routePoints.get(friendIndex), routePoints.get(0));
+        int startInt = intersections[0];
+        System.out.println("Start intersection index: " + routePoints.get(0).get(startInt));
+        int endInt = intersections[1];
+        System.out.println("End intersection index: " + routePoints.get(0).get(endInt));
+        getWayPoints(routePoints.get(0), startInt, endInt);
+
+    }
+
+    private void getWayPoints(List<com.google.maps.model.LatLng> latLngs, int startInt, int endInt) {
+        System.out.println("Getting wayPoints");
+        DirectionsApiRequest wayPointsReq = DirectionsApi.newRequest(context);
+        wayPointsReq.origin(routePoints.get(0).get(startInt));
+        wayPointsReq.destination(routePoints.get(0).get(endInt));
+        wayPointsReq.mode(TravelMode.WALKING);
+        System.out.println("WayPoints request created: " + wayPointsReq);
+        wayPointsReq.setCallback(new PendingResult.Callback<DirectionsResult>() {
+            @Override
+            public void onResult(DirectionsResult result) {
+                System.out.println("Got result: " + result);
+                List<com.google.maps.model.LatLng> points = result.routes[0].overviewPolyline.decodePath();
+                System.out.println("Waypoints found: " + points);
+                System.out.println("Number of waypoints found: " + points.size());
+                ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded = new ArrayList<>();
+                if (points.size() <= 23)
+                {
+                    for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
+                    System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
+                }
+                else
+                {
+                    System.out.println(points.size()/23.0);
+                    double factor = (double) (Math.round((double) points.size()/23.0 * Math.pow(10, 1)))/Math.pow(10, 1);
+                    factor = (int) (Math.round(factor));
+                    System.out.println("Factor: " + factor);
+                    for (int i = 0; i < points.size(); i+=factor)
+                    {
+                        wayPtsToBeAdded.add(points.get(i));
+                    }
+                    System.out.println("Size of wayPtsToBeAdded when points size > 23: " + wayPtsToBeAdded.size());
+                    if (wayPtsToBeAdded.size() > 23)
+                    {
+                        int diff = wayPtsToBeAdded.size() - 23;
+                        System.out.println("DIFF: " + diff);
+                        for (int i = 22; i < wayPtsToBeAdded.size()-1+diff; i++)
+                        {
+                            System.out.println(wayPtsToBeAdded.get(i));
+                            wayPtsToBeAdded.remove(i);
+                        }
+                    }
+                    System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
+                }
+
+                com.google.maps.model.LatLng startLatLng = routePoints.get(0).get(0);
+                com.google.maps.model.LatLng endLatLng = routePoints.get(0).get(routePoints.get(0).size()-1);
+                createUrl(startLatLng, endLatLng, wayPtsToBeAdded);
+            }
+
+            @Override
+            public void onFailure(Throwable e) {
 
             }
         });
     }
 
-    public static void setOptimalities() {
-        optimalities = getRoute.optimalities;
-        System.out.println("Updated optimalities after callbacks & completable futures: " + optimalities);
+    private void createUrl(com.google.maps.model.LatLng latLng, com.google.maps.model.LatLng latLng1, ArrayList<com.google.maps.model.LatLng> wayPtsToBeAdded)
+    {
+        System.out.println("Starting LatLng: " + latLng);
+        System.out.println("Ending latLng: " + latLng1);
+        System.out.println("Points in between: " + wayPtsToBeAdded);
+
+        String start = "https://www.google.com/maps/dir/?api=1&";
+        start+="origin="+latLng.toUrlValue();
+        start+="&destination="+latLng1.toUrlValue();
+        start+="&travelmode=walking&waypoints=";
+        for (int i = 0; i < wayPtsToBeAdded.size()-1;i++)
+        {
+            start+=wayPtsToBeAdded.get(i).toUrlValue()+"%7C";
+        }
+        start+=wayPtsToBeAdded.get(wayPtsToBeAdded.size()-1).toUrlValue();
+        System.out.println(start);
+        startIntent(start);
     }
 
-
+    private void startIntent(String start) {
+        Intent intent = new Intent(android.content.Intent.ACTION_VIEW, Uri.parse(start));
+        startActivity(intent);
+    }
 
     private void alert(final String from, String body, final String title) {
         Toast.makeText(MapActivity.this, title, Toast.LENGTH_SHORT).show();
