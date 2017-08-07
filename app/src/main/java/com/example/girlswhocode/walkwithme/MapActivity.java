@@ -3,6 +3,7 @@ package com.example.girlswhocode.walkwithme;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -421,17 +422,65 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     public void setOptimalities() {
-        int friendIndex = (int) optimalities.get(0)[1];
-        System.out.println("Updated optimalities after callbacks & completable futures: " + optimalities);
-        System.out.println("Updated route points: " + routePoints);
-        System.out.println("user's route points: " + routePoints.get(0));
-        int[] intersections = findIntersection(routePoints.get(friendIndex), routePoints.get(0));
-        int startInt = intersections[0];
-        System.out.println("Start intersection index: " + routePoints.get(0).get(startInt));
-        int endInt = intersections[1];
-        System.out.println("End intersection index: " + routePoints.get(0).get(endInt));
-        getWayPoints(routePoints.get(0), startInt, endInt);
+        AlertDialog.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder = new AlertDialog.Builder(MapActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+        } else {
+            builder = new AlertDialog.Builder(MapActivity.this);
+        }
 
+        System.out.println("Getting top 3 optimalities");
+        ArrayList<double[]> top3Optimalities = new ArrayList<double[]>();
+        top3Optimalities.add(optimalities.get(0));
+        top3Optimalities.add(optimalities.get(1));
+        top3Optimalities.add(optimalities.get(2));
+
+
+        ArrayList<String> top3friends = new ArrayList<String>();
+        DatabaseReference usernames = FirebaseDatabase.getInstance().getReference("users");
+        usernames.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(int i = 0; i < optimalities.size(); i++)
+                {
+                    String newUsername = dataSnapshot.child(uids.get(((int) (optimalities.get(i)[1] - 1)))).child("username").getValue().toString();
+                    top3friends.add(newUsername);
+                }
+                System.out.println("added all friends to list based on optimalities");
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        final CharSequence[] top3friendsList;
+        if(top3friends.size() >= 3)
+            top3friendsList = new CharSequence[]{top3friends.get(0), top3friends.get(1), top3friends.get(2)};
+        else if(top3friends.size() == 2)
+            top3friendsList = new CharSequence[]{top3friends.get(0), top3friends.get(1)};
+        else if(top3friends.size() == 1)
+            top3friendsList = new CharSequence[]{top3friends.get(0)};
+        else
+            top3friendsList = new CharSequence[1];
+
+        System.out.println("creating builder");
+        AlertDialog.Builder newbuilder = new AlertDialog.Builder(MapActivity.this);
+        newbuilder.setTitle("Choose a friend to walk with");
+        newbuilder.setItems(top3friendsList, new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        System.out.println(top3friendsList[i]);
+                        int[] intersections = findIntersection(routePoints.get((int) optimalities.get(i)[1]), routePoints.get(0));
+                        int startInt = intersections[0];
+                        int endInt = intersections[1];
+                        getWayPoints(routePoints.get(0), startInt, endInt);
+                    }
+                });
+        newbuilder.show();
+        System.out.println("showing builder");
     }
 
     private void getWayPoints(List<com.google.maps.model.LatLng> latLngs, int startInt, int endInt) {
