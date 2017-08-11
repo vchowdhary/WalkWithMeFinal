@@ -429,24 +429,46 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             builder = new AlertDialog.Builder(MapActivity.this);
         }
 
-        System.out.println("Getting top 3 optimalities");
-        ArrayList<double[]> top3Optimalities = new ArrayList<double[]>();
-        top3Optimalities.add(optimalities.get(0));
-        top3Optimalities.add(optimalities.get(1));
-        top3Optimalities.add(optimalities.get(2));
-
-
         ArrayList<String> top3friends = new ArrayList<String>();
         DatabaseReference usernames = FirebaseDatabase.getInstance().getReference("users");
-        usernames.addValueEventListener(new ValueEventListener() {
+        usernames.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for(int i = 0; i < optimalities.size(); i++)
                 {
                     String newUsername = dataSnapshot.child(uids.get(((int) (optimalities.get(i)[1] - 1)))).child("username").getValue().toString();
-                    top3friends.add(newUsername);
+                    if(!top3friends.contains(newUsername))
+                        top3friends.add(newUsername);
                 }
                 System.out.println("added all friends to list based on optimalities");
+
+                final CharSequence[] top3friendsList;
+                if(top3friends.size() >= 3)
+                    top3friendsList = new CharSequence[]{top3friends.get(0), top3friends.get(1), top3friends.get(2)};
+                else if(top3friends.size() == 2)
+                    top3friendsList = new CharSequence[]{top3friends.get(0), top3friends.get(1)};
+                else if(top3friends.size() == 1)
+                    top3friendsList = new CharSequence[]{top3friends.get(0)};
+                else
+                    top3friendsList = new CharSequence[1];
+
+                System.out.println("creating builder");
+                AlertDialog.Builder newbuilder = new AlertDialog.Builder(MapActivity.this);
+                newbuilder.setTitle("Choose a friend to walk with");
+                newbuilder.setItems(top3friendsList, new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        System.out.println(top3friendsList[i]);
+                        int[] intersections = findIntersection(routePoints.get(0), routePoints.get((int) optimalities.get(i)[1]));
+                        int startInt = intersections[0];
+                        int endInt = intersections[1];
+                        getWayPoints(routePoints.get(0), startInt, endInt);
+                    }
+                });
+                newbuilder.show();
+                System.out.println("showing builder");
+
             }
 
             @Override
@@ -454,33 +476,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             }
         });
-
-        final CharSequence[] top3friendsList;
-        if(top3friends.size() >= 3)
-            top3friendsList = new CharSequence[]{top3friends.get(0), top3friends.get(1), top3friends.get(2)};
-        else if(top3friends.size() == 2)
-            top3friendsList = new CharSequence[]{top3friends.get(0), top3friends.get(1)};
-        else if(top3friends.size() == 1)
-            top3friendsList = new CharSequence[]{top3friends.get(0)};
-        else
-            top3friendsList = new CharSequence[1];
-
-        System.out.println("creating builder");
-        AlertDialog.Builder newbuilder = new AlertDialog.Builder(MapActivity.this);
-        newbuilder.setTitle("Choose a friend to walk with");
-        newbuilder.setItems(top3friendsList, new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        System.out.println(top3friendsList[i]);
-                        int[] intersections = findIntersection(routePoints.get((int) optimalities.get(i)[1]), routePoints.get(0));
-                        int startInt = intersections[0];
-                        int endInt = intersections[1];
-                        getWayPoints(routePoints.get(0), startInt, endInt);
-                    }
-                });
-        newbuilder.show();
-        System.out.println("showing builder");
     }
 
     private void getWayPoints(List<com.google.maps.model.LatLng> latLngs, int startInt, int endInt) {
@@ -502,6 +497,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 {
                     for (com.google.maps.model.LatLng point : points) wayPtsToBeAdded.add(point);
                     System.out.println("Size of wayPtsToBeAdded when points size <= 23: " + wayPtsToBeAdded.size());
+                    com.google.maps.model.LatLng startLatLng = routePoints.get(0).get(0);
+                    System.out.println("Received startLatLng: " + startLatLng);
+                    com.google.maps.model.LatLng endLatLng = routePoints.get(0).get(routePoints.get(0).size()-1);
+                    System.out.println("Received endLatLng: " + endLatLng);
+                    System.out.println("Creating url...");
+                    createUrl(startLatLng, endLatLng, wayPtsToBeAdded);
                 }
                 else
                 {
@@ -524,12 +525,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             wayPtsToBeAdded.remove(i);
                         }
                     }
-                    System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
+                    com.google.maps.model.LatLng startLatLng = routePoints.get(0).get(0);
+                    System.out.println("Received startLatLng: " + startLatLng);
+                    com.google.maps.model.LatLng endLatLng = routePoints.get(0).get(routePoints.get(0).size()-1);
+                    System.out.println("Received endLatLng: " + endLatLng);
+                    System.out.println("Creating url...");
+                    createUrl(startLatLng, endLatLng, wayPtsToBeAdded);
+                    //System.out.println("Size of wayPtsToBeAdded after additional check for right number of waypoints: " + wayPtsToBeAdded.size());
                 }
 
-                com.google.maps.model.LatLng startLatLng = routePoints.get(0).get(0);
-                com.google.maps.model.LatLng endLatLng = routePoints.get(0).get(routePoints.get(0).size()-1);
-                createUrl(startLatLng, endLatLng, wayPtsToBeAdded);
             }
 
             @Override
