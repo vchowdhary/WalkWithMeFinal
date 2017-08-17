@@ -61,6 +61,7 @@ import com.google.maps.model.TravelMode;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -431,7 +432,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         ArrayList<String> top3friends = new ArrayList<String>();
         DatabaseReference usernames = FirebaseDatabase.getInstance().getReference("users");
-        usernames.addListenerForSingleValueEvent(new ValueEventListener() {
+        usernames.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for(int i = 0; i < optimalities.size(); i++)
@@ -466,7 +467,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         getWayPoints(routePoints.get(0), startInt, endInt);
                     }
                 });
-                newbuilder.show();
+
+                AlertDialog finalAlert = newbuilder.create();
+                finalAlert.show();
+                //alert = newbuilder.show();
                 System.out.println("showing builder");
 
             }
