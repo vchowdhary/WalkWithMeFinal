@@ -57,6 +57,7 @@ public class Login extends AppCompatActivity {
             }
         };
 
+
         // Create method to handle login button clicked
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override

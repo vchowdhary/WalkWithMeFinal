@@ -467,9 +467,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         getWayPoints(routePoints.get(0), startInt, endInt);
                     }
                 });
-
-                AlertDialog finalAlert = newbuilder.create();
-                finalAlert.show();
+                newbuilder.create();
+                newbuilder.show();
+                //finalAlert.show();
                 //alert = newbuilder.show();
                 System.out.println("showing builder");
 

@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">WalkWithMe</string>
-    <string name="google_android_map_api_key">AIzaSyD02qz4BGznhKGNK_JgGmtjhIgswG0ZPP8</string>
+    <string name="google_android_map_api_key">AIzaSyBGMSdZ3lxQgL21jrWOOM4MZx8XhuHeQgo</string>
     <string name="auth_failed">Failed to authenticate Firebase User</string>
 </resources>

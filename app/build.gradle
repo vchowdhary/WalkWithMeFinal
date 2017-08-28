@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.0"
+    compileSdkVersion 25
+    buildToolsVersion "26.0.1"
     defaultConfig {
         applicationId "com.example.girlswhocode.walkwithme"
         minSdkVersion 24
@@ -35,24 +35,22 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.0.1'
     compile 'com.android.support:customtabs:25.0.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'com.google.firebase:firebase-appindexing:10.0.1'
-    compile 'com.google.android.gms:play-services-maps:10.0.1'
-    compile 'com.google.android.gms:play-services-places:10.0.1'
-    compile 'com.google.android.gms:play-services-location:10.0.1'
+    compile 'com.google.firebase:firebase-appindexing:10.0.0'
+    compile 'com.google.android.gms:play-services-maps:10.0.0'
+    compile 'com.google.android.gms:play-services-places:10.0.0'
+    compile 'com.google.android.gms:play-services-location:10.0.0'
     compile 'com.google.firebase:firebase-auth:10.0.0'
-    compile 'com.google.firebase:firebase-database:10.0.1'
+    compile 'com.google.firebase:firebase-database:10.0.0'
     compile 'com.firebaseui:firebase-ui-database:1.0.1'
     compile 'com.google.firebase:firebase-storage:10.0.0'
-    compile 'com.google.firebase:firebase-messaging:10.0.1'
+    compile 'com.google.firebase:firebase-messaging:10.0.0'
     compile 'com.android.support:recyclerview-v7:22.2.1'
     compile 'com.google.maps:google-maps-services:0.1.20'
     compile 'com.google.maps.android:android-maps-utils:0.4.3'
+    compile 'com.android.support:design:25.2.0'
     testCompile 'junit:junit:4.12'
+
 }
-
-
-
-
 
 
 apply plugin: 'com.google.gms.google-services'
